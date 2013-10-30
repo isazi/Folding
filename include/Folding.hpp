@@ -47,7 +47,7 @@ using AstroData::Observation;
 #ifndef FOLDING_HPP
 #define FOLDING_HPP
 
-namespace TDM {
+namespace PulsarSearch {
 
 // OpenCL folding algorithm
 template< typename T > class Folding : public Kernel< T > {
@@ -189,6 +189,6 @@ template< typename T > inline void Folding< T >::setObservation(Observation< T >
 	observation = obs;
 }
 
-} // TDM
+} // PulsarSearch
 
 #endif // FOLDING_HPP

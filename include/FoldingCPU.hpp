@@ -35,7 +35,7 @@ using AstroData::Observation;
 #ifndef FOLDING_CPU_HPP
 #define FOLDING_CPU_HPP
 
-namespace TDM {
+namespace PulsarSearch {
 
 // OpenMP folding algorithm
 template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters);
@@ -70,6 +70,6 @@ template< typename T > void folding(const unsigned int second, const Observation
 	}
 }
 
-} // TDM
+} // PulsarSearch
 
 #endif // FOLDING_CPU_HPP
