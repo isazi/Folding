@@ -90,7 +90,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	"const unsigned int bin = get_group_id(2);\n"
 	"const unsigned int pCounter = counters[(get_group_id(2) * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (get_group_id(1) * " + nrPaddedDMs_s + ") + DM];\n"
 	"unsigned int foldedCounter = 0;\n"
-	+ this->dataType + "foldedSample = 0;\n"
+	+ this->dataType + " foldedSample = 0;\n"
 	"\n"
 	"unsigned int sample = (bin * period) + bin + ((pCounter / (period + 1)) * periodValue) + (pCounter % (period + 1));\n"
 	"if ( (sample % "+ nrSamplesPerSecond_s + ") == 0 ) {\n"
