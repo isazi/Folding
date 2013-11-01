@@ -71,7 +71,7 @@ const float channelBandwidth = 0.2929f;
 const unsigned int nrSamplesPerSecond = 20000;
 const unsigned int nrChannels = 1024;
 // Periods
-const unsigned int nrBins = 32;
+const unsigned int nrBins = 256;
 
 
 int main(int argc, char * argv[]) {
@@ -109,12 +109,12 @@ int main(int argc, char * argv[]) {
 	initializeOpenCL(clPlatformID, 1, clPlatforms, clContext, clDevices, clQueues);
 
 	cout << fixed << endl;
-	cout << "# nrDMs nrPeriods nrPeriodsPerBlock GFLOP/s err time err GB/s err " << endl << endl;
+	cout << "# nrDMs nrPeriods nrDMsPerBlock GFLOP/s err time err" << endl << endl;
 
 	for ( unsigned int nrDMs = 2; nrDMs <= 4096; nrDMs *= 2 )	{
 		observation.setNrDMs(nrDMs);
 		
-		for ( unsigned int nrPeriods = 32; nrPeriods <= 1024; nrPeriods *= 2 ) {
+		for ( unsigned int nrPeriods = 2; nrPeriods <= 1024; nrPeriods *= 2 ) {
 			observation.setNrPeriods(nrPeriods);
 
 			// Allocate memory
@@ -140,14 +140,14 @@ int main(int argc, char * argv[]) {
 			}
 
 			// Find the parameters
-			vector< unsigned int > periodsPerBlock;
-			for ( unsigned int periods = 32; periods <= maxThreadsPerBlock; periods += 32 ) {
-				if ( (observation.getNrPeriods() % periods) == 0 ) {
-					periodsPerBlock.push_back(periods);
+			vector< unsigned int > DMsPerBlock;
+			for ( unsigned int DMs = 2; DMs <= maxThreadsPerBlock; DMs += 2 ) {
+				if ( (observation.getNrDMs() % DMs) == 0 ) {
+					DMsPerBlock.push_back(DMs);
 				}
 			}
 
-			for ( vector< unsigned int >::iterator periods = periodsPerBlock.begin(); periods != periodsPerBlock.end(); periods++ ) {
+			for ( vector< unsigned int >::iterator DMs = DMsPerBlock.begin(); DMs != DMsPerBlock.end(); DMs++ ) {
 				double Acur[2] = {0.0, 0.0};
 				double Aold[2] = {0.0, 0.0};
 				double Vcur[2] = {0.0, 0.0};
@@ -155,10 +155,10 @@ int main(int argc, char * argv[]) {
 
 				try {
 					// Generate kernel
-					Folding< dataType > clFold("clFoldv21p" + toStringValue< unsigned int >(*periods), typeName);
+					Folding< dataType > clFold("clFold", typeName);
 					clFold.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
 					clFold.setObservation(&observation);
-					clFold.setNrPeriodsPerBlock(*periods);
+					clFold.setNrDMsPerBlock(*DMs);
 					clFold.generateCode();
 
 					for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
@@ -166,7 +166,7 @@ int main(int argc, char * argv[]) {
 						
 						if ( iteration == 0 ) {
 							Acur[0] = clFold.getGFLOP() / clFold.getTimer().getLastRunTime();
-							Acur[1] = clFold.getGB() / clFold.getTimer().getLastRunTime();
+							// Acur[1] = clFold.getGB() / clFold.getTimer().getLastRunTime();
 						} else {
 							Aold[0] = Acur[0];
 							Vold[0] = Vcur[0];
@@ -174,17 +174,17 @@ int main(int argc, char * argv[]) {
 							Acur[0] = Aold[0] + (((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Aold[0]) / (iteration + 1));
 							Vcur[0] = Vold[0] + (((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Aold[0]) * ((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Acur[0]));
 
-							Aold[1] = Acur[1];
-							Vold[1] = Vcur[1];
+							// Aold[1] = Acur[1];
+							// Vold[1] = Vcur[1];
 
-							Acur[1] = Aold[1] + (((clFold.getGB() / clFold.getTimer().getLastRunTime()) - Aold[1]) / (iteration + 1));
-							Vcur[1] = Vold[1] + (((clFold.getGB() / clFold.getTimer().getLastRunTime()) - Aold[1]) * ((clFold.getGB() / clFold.getTimer().getLastRunTime()) - Acur[1]));
+							// Acur[1] = Aold[1] + (((clFold.getGB() / clFold.getTimer().getLastRunTime()) - Aold[1]) / (iteration + 1));
+							// Vcur[1] = Vold[1] + (((clFold.getGB() / clFold.getTimer().getLastRunTime()) - Aold[1]) * ((clFold.getGB() / clFold.getTimer().getLastRunTime()) - Acur[1]));
 						}
 					}
 					Vcur[0] = sqrt(Vcur[0] / nrIterations);
-					Vcur[1] = sqrt(Vcur[1] / nrIterations);
+					// Vcur[1] = sqrt(Vcur[1] / nrIterations);
 
-					cout << nrDMs << " " << nrPeriods << " " << *periods << " " << setprecision(3) << Acur[0] << " " << Vcur[0] << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << " " << setprecision(3) << Acur[1] << " " << Vcur[1] << endl;
+					cout << nrDMs << " " << nrPeriods << " " << *DMs << " " << setprecision(3) << Acur[0] << " " << Vcur[0] << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << endl;
 				} catch ( OpenCLError err ) {
 					cerr << err.what() << endl;
 					continue;
