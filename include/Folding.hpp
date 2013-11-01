@@ -57,12 +57,12 @@ public:
 	void generateCode() throw (OpenCLError);
 	void operator()(unsigned int second, CLData< T > * input, CLData< T > * output, CLData< unsigned int > * counters) throw (OpenCLError);
 
-	inline void setNrPeriodsPerBlock(unsigned int periods);
+	inline void setNrDMsPerBlock(unsigned int DMs);
 
 	inline void setObservation(Observation< T > * obs);
 
 private:
-	unsigned int nrPeriodsPerBlock;
+	unsigned int nrDMsPerBlock;
 	cl::NDRange globalSize;
 	cl::NDRange localSize;
 
@@ -71,103 +71,57 @@ private:
 
 
 // Implementation
-template< typename T > Folding< T >::Folding(string name, string dataType) : Kernel< T >(name, dataType), nrPeriodsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0) {}
+template< typename T > Folding< T >::Folding(string name, string dataType) : Kernel< T >(name, dataType), nrDMsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0) {}
 
 template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	// Begin kernel's template
 	string nrSamplesPerSecond_s = toStringValue< unsigned int >(observation->getNrSamplesPerSecond());
-	string nrSamplesPerPaddedSecond_s = toStringValue< unsigned int >(observation->getNrSamplesPerPaddedSecond());
-	string nrPaddedPeriods_s  = toStringValue< unsigned int >(observation->getNrPaddedPeriods());
+	string nrPaddedDMs_s  = toStringValue< unsigned int >(observation->getNrPaddedDMs());
 	string nrPeriods_s = toStringValue< unsigned int >(observation->getNrPeriods());
-	string firstPeriod_s = toStringValue< unsigned int >(observation->getFirstPeriod());
-	string periodStep_s = toStringValue< unsigned int >(observation->getPeriodStep());
-	string nrPeriodsPerBlock_s = toStringValue< unsigned int >(nrPeriodsPerBlock);
+	string nrDMsPerBlock_s = toStringValue< unsigned int >(nrDMsPerBlock);
 	string nrBins_s = toStringValue< unsigned int >(observation->getNrBins());
 
 	delete this->code;
 	this->code = new string();
 	*(this->code) = "__kernel void " + this->name + "(const unsigned int second, __global const " + this->dataType + " * const restrict samples, __global " + this->dataType + " * const restrict bins, __global unsigned int * const restrict counters) {\n"
-		"const unsigned int dm = get_group_id(1);\n"
-		"const unsigned int periodIndex = (get_group_id(0) * " + nrPeriodsPerBlock_s + ") + get_local_id(0);\n"
-		"const unsigned int period = " + firstPeriod_s + " + (periodIndex * " + periodStep_s + ");\n"
-		"__local " + this->dataType + " block[" + nrPeriodsPerBlock_s + "];\n"
-		"<%BINS%>"
-		"<%COUNTERS%>"
-		"\n"
-		"for ( unsigned int globalSample = get_local_id(0); globalSample < " + nrSamplesPerPaddedSecond_s + "; globalSample += " + nrPeriodsPerBlock_s + " ) {\n"
-		"block[get_local_id(0)] = samples[(dm * " + nrSamplesPerPaddedSecond_s + ") + globalSample];\n"
-		"barrier(CLK_LOCAL_MEM_FENCE);\n"
-		"for ( unsigned int localSample = 0; localSample < " + nrPeriodsPerBlock_s + "; localSample++ ) {\n"
-		"unsigned int sample = ( globalSample - get_local_id(0) ) + localSample;\n"
-		"const " + this->dataType + " cSample = block[localSample];\n"
-		"if ( sample >= " + nrSamplesPerSecond_s + " ) {\n"
-		"break;\n"
-		"}\n"
-		"sample += ( second * " + nrSamplesPerSecond_s + " );\n"
-		"const float phase = ( sample / convert_float(period) ) - ( sample / period );\n"
-		"const unsigned int bin = convert_uint_rtz(phase * " + nrBins_s + ".0f);\n"
-		"\n"
-		"<%ACCUMULATE%>"
-		"}\n"
-		"}\n"
-		"\n"
-		"unsigned int globalItem = 0;\n"
-		"unsigned int pCounter = 0;\n"
-		+ this->dataType + " pValue = convert_" + this->dataType + "(0);\n"
-		"float addedFraction = 0.0f;\n"
-		"<%STORE%>"
-		"}";
+	"const unsigned int DM = (get_group_id(0) * " + nrDMsPerBlock_s + ") + get_local_id(0);\n"
+	"const unsigned int period = get_group_id(1);\n"
+	"const unsigned int periodValue = (get_group_id(1) + 1) * " + nrBins_s + ";\n"
+	"const unsigned int bin = get_group_id(2);\n"
+	"const unsigned int pCounter = counters[(get_group_id(2) * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (get_group_id(1) * " + nrPaddedDMs_s + ") + DM];\n"
+	"unsigned int foldedCounter = 0;\n"
+	+ this->dataType + "foldedSample = 0;\n"
+	"\n"
+	"unsigned int sample = (bin * period) + bin + ((pCounter / (period + 1)) * periodValue) + (pCounter % (period + 1));\n"
+	"if ( (sample % "+ nrSamplesPerSecond_s + ") == 0 ) {\n"
+	"sample = 0;\n"
+	"} else {\n"
+	"sample = (sample % "+ nrSamplesPerSecond_s + ") - (sample / "+ nrSamplesPerSecond_s + ");\n"
+	"}\n"
+	"while ( sample < " + nrSamplesPerSecond_s + " ) {\n"
+	"foldedSample += samples[(sample * " + nrPaddedDMs_s + ") + DM];\n"
+	"foldedCounter++;\n"
+	"if ( ((foldedCounter + pCounter) % (period + 1)) == 0 ) {\n"
+	"sample += periodValue;\n"
+	"} else {\n"
+	"sample++;\n"
+	"}\n"
+	"}\n"
+	"if ( foldedCounter > 0 ) {\n"
+	"const unsigned int outputItem = (bin * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period * " + nrPaddedDMs_s + ") + DM;\n"
+	"const "+ this->dataType + " pValue = bins[outputItem];\n"
+	+ this->dataType + " addedFraction = 0;"
+	"addedFraction = convert_float(foldedCounter) / (foldedCounter + pCounter);\n"
+	"foldedSample /= foldedCounter;\n"
+	"counters[outputItem] = pCounter + foldedCounter;\n"
+	"bins[outputItem] = (addedFraction * foldedSample) + ((1.0f - addedFraction) * pValue);\n"
+	"}\n"
+	"}\n";
 
-	string binsTemplate = this->dataType + " bin<%BNUM%> = convert_" + this->dataType + "(0);\n";
-	string countersTemplate = "unsigned int counter<%BNUM%> = 0;\n";
-	string accumulateTemplate = "bin<%BNUM%> += cSample * (bin == <%BNUM%>);\n"
-		"counter<%BNUM%> += 1 * (bin == <%BNUM%>);\n";
-	string storeTemplate = "globalItem = (((dm * " + nrBins_s + ") + <%BNUM%>) * " + nrPaddedPeriods_s + ") + periodIndex;\n"
-		"pCounter = counters[globalItem];\n"
-		"pValue = bins[globalItem];\n"
-		"addedFraction = convert_float(counter<%BNUM%>) / ( ( counter<%BNUM%> + pCounter ) + ( 1 * ( counter<%BNUM%> == 0 ) ) );\n"
-		"bin<%BNUM%> /= counter<%BNUM%> * ( 1 * ( counter<%BNUM%> > 0 ) );\n"
-		"counters[globalItem] = pCounter + counter<%BNUM%>;\n"
-		"bins[globalItem] = (addedFraction * bin<%BNUM%>) + ((1.0f - addedFraction) * pValue);\n";
-	// End kernel's template
-	
-	string * bins = new string();
-	string * counters = new string();
-	string * accumulates = new string();
-	string * stores = new string();
-	
-	for ( unsigned int bin = 0; bin < observation->getNrBins(); bin++ ) {
-		string bin_s = toStringValue< unsigned int >(bin);
-		string * temp = 0;
+	globalSize = cl::NDRange(observation->getNrDMs(), observation->getNrPeriods(), observation->getNrBins());
+	localSize = cl::NDRange(nrDMsPerBlock, 1, 1);
 
-		temp = replace(&binsTemplate, "<%BNUM%>", bin_s);
-		bins->append(*temp);
-		delete temp;
-		temp = replace(&countersTemplate, "<%BNUM%>", bin_s);
-		counters->append(*temp);
-		delete temp;
-		temp = replace(&accumulateTemplate, "<%BNUM%>", bin_s);
-		accumulates->append(*temp);
-		delete temp;
-		temp = replace(&storeTemplate, "<%BNUM%>", bin_s);
-		stores->append(*temp);
-		delete temp;
-	}
-	this->code = replace(this->code, "<%BINS%>", *bins, true);
-	delete bins;
-	this->code = replace(this->code, "<%COUNTERS%>", *counters, true);
-	delete counters;
-	this->code = replace(this->code, "<%ACCUMULATE%>", *accumulates, true);
-	delete accumulates;
-	this->code = replace(this->code, "<%STORE%>", *stores, true);
-	delete stores;
-
-	globalSize = cl::NDRange(observation->getNrPeriods(), observation->getNrDMs());
-	localSize = cl::NDRange(nrPeriodsPerBlock, 1);
-
-	this->gb = giga(static_cast< long long unsigned int >(observation->getNrDMs()) * observation->getNrPeriods() * ( ( ( observation->getNrSamplesPerSecond() / nrPeriodsPerBlock ) * sizeof(T) ) + ( ( 2 * sizeof(T) ) + ( 2 * sizeof(unsigned int) ) ) ));
-	this->gflop = giga(static_cast< long long unsigned int >(observation->getNrDMs()) * observation->getNrPeriods() * observation->getNrSamplesPerSecond() * observation->getNrBins());
-	this->arInt = this->gflop / this->gb;
+	this->gflop = giga(static_cast< long long unsigned int >(observation->getNrDMs()) * observation->getNrPeriods() * observation->getNrSamplesPerSecond());
 
 	this->compile();
 }
@@ -181,8 +135,8 @@ template< typename T > void Folding< T >::operator()(unsigned int second, CLData
 	this->run(globalSize, localSize);
 }
 
-template< typename T > inline void Folding< T >::setNrPeriodsPerBlock(unsigned int periods) {
-	nrPeriodsPerBlock = periods;
+template< typename T > inline void Folding< T >::setNrDMsPerBlock(unsigned int DMs) {
+	nrDMsPerBlock = DMs;
 }
 
 template< typename T > inline void Folding< T >::setObservation(Observation< T > * obs) {
