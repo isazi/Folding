@@ -120,7 +120,9 @@ int main(int argc, char * argv[]) {
 			// Allocate memory
 			dedispersedData->allocateHostData(observation.getNrSamplesPerSecond() * observation.getNrPaddedDMs());
 			foldedData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
+			foldedData->blankHostData();
 			counterData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
+			counterData->blankHostData();
 
 			dedispersedData->setCLContext(clContext);
 			dedispersedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
