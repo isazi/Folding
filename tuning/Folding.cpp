@@ -161,6 +161,8 @@ int main(int argc, char * argv[]) {
 					clFold.setNrDMsPerBlock(*DMs);
 					clFold.generateCode();
 
+					clFold(0, dedispersedData, foldedData, counterData);
+					(clFold.getTimer()).reset();
 					for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
 						clFold(0, dedispersedData, foldedData, counterData);
 						
