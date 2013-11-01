@@ -118,9 +118,9 @@ int main(int argc, char * argv[]) {
 			observation.setNrPeriods(nrPeriods);
 
 			// Allocate memory
-			dedispersedData->allocateHostData(observation.getNrDMs() * observation.getNrSamplesPerPaddedSecond());
-			foldedData->allocateHostData(observation.getNrDMs() * observation.getNrBins() * observation.getNrPaddedPeriods());
-			counterData->allocateHostData(observation.getNrDMs() * observation.getNrBins() * observation.getNrPaddedPeriods());
+			dedispersedData->allocateHostData(observation.getNrSamplesPerSecond() * observation.getNrPaddedDMs());
+			foldedData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
+			counterData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
 
 			dedispersedData->setCLContext(clContext);
 			dedispersedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
