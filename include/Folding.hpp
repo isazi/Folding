@@ -169,7 +169,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 
 				temp = replace(&storeTemplate, "<%BIN_NUM%>", *bin_s);
 				temp = replace(temp, "<%PERIOD_NUM%>", *period_s, true);
-				temp = replace(temp, "<%DM_NUM%>", DM_s, true);
+				temp = replace(temp, "<%DM_NUM%>", *DM_s, true);
 				stores->append(*temp);
 				delete temp;
 
@@ -182,7 +182,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 		delete DM_s;
 	}
 	this->code = replace(this->code, "<%DEFS%>", *defs, true);
-	this->code = replace(this->code, "<%COMPUTE%>", *computes. true);
+	this->code = replace(this->code, "<%COMPUTE%>", *computes, true);
 	this->code = replace(this->code, "<%STORE%>", *stores, true);
 	delete defs;
 	delete computes;
