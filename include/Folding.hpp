@@ -55,14 +55,18 @@ public:
 	Folding(string name, string dataType);
 	
 	void generateCode() throw (OpenCLError);
-	void operator()(unsigned int second, CLData< T > * input, CLData< T > * output, CLData< unsigned int > * counters) throw (OpenCLError);
+	void operator()(CLData< T > * input, CLData< T > * output, CLData< unsigned int > * counters) throw (OpenCLError);
 
 	inline void setNrDMsPerBlock(unsigned int DMs);
+	inline void setNrPeriodsPerBlock(unsigned int periods);
+	inline void setNrBinsPerBlock(unsigned int bins);
 
 	inline void setObservation(Observation< T > * obs);
 
 private:
 	unsigned int nrDMsPerBlock;
+	unsigned int nrPeriodsPerBlock;
+	unsigned int nrBinsPerBlock;
 	cl::NDRange globalSize;
 	cl::NDRange localSize;
 
@@ -71,7 +75,7 @@ private:
 
 
 // Implementation
-template< typename T > Folding< T >::Folding(string name, string dataType) : Kernel< T >(name, dataType), nrDMsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0) {}
+template< typename T > Folding< T >::Folding(string name, string dataType) : Kernel< T >(name, dataType), nrDMsPerBlock(0), nrPeriodsPerBlock(0), nrBinsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0) {}
 
 template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	// Begin kernel's template
@@ -79,18 +83,21 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	string nrPaddedDMs_s  = toStringValue< unsigned int >(observation->getNrPaddedDMs());
 	string nrPeriods_s = toStringValue< unsigned int >(observation->getNrPeriods());
 	string nrDMsPerBlock_s = toStringValue< unsigned int >(nrDMsPerBlock);
+	string nrPeriodsPerBlock_s = toStringValue< unsigned int >(nrPeriodsPerBlock);
+	string nrBinsPerBlock_s = toStringValue< unsigned int >(nrBinsPerBlock);
 	string nrBins_s = toStringValue< unsigned int >(observation->getNrBins());
 
 	delete this->code;
 	this->code = new string();
-	*(this->code) = "__kernel void " + this->name + "(const unsigned int second, __global const " + this->dataType + " * const restrict samples, __global " + this->dataType + " * const restrict bins, __global unsigned int * const restrict counters) {\n"
+	*(this->code) = "__kernel void " + this->name + "(__global const " + this->dataType + " * const restrict samples, __global " + this->dataType + " * const restrict bins, __global unsigned int * const restrict counters) {\n"
 	"const unsigned int DM = (get_group_id(0) * " + nrDMsPerBlock_s + ") + get_local_id(0);\n"
-	"const unsigned int period = get_group_id(1);\n"
-	"const unsigned int periodValue = (get_group_id(1) + 1) * " + nrBins_s + ";\n"
-	"const unsigned int bin = get_group_id(2);\n"
-	"const unsigned int pCounter = counters[(get_group_id(2) * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (get_group_id(1) * " + nrPaddedDMs_s + ") + DM];\n"
+	"const unsigned int period = (get_group_id(1) * " + nrPeriodsPerBlock_s + ") + get_local_id(1);\n"
+	"const unsigned int bin = (get_group_id(2) * " + nrBinsPerBlock_s + ") + get_local_id(2);\n"
+	"const unsigned int periodValue = (period + 1) * " + nrBins_s + ";\n"
 	"unsigned int foldedCounter = 0;\n"
 	+ this->dataType + " foldedSample = 0;\n"
+	"const unsigned int pCounter = counters[(bin * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period * " + nrPaddedDMs_s + ") + DM];\n"
+
 	"\n"
 	"unsigned int sample = (bin * period) + bin + ((pCounter / (period + 1)) * periodValue) + (pCounter % (period + 1));\n"
 	"if ( (sample % "+ nrSamplesPerSecond_s + ") == 0 ) {\n"
@@ -119,24 +126,31 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	"}\n";
 
 	globalSize = cl::NDRange(observation->getNrDMs(), observation->getNrPeriods(), observation->getNrBins());
-	localSize = cl::NDRange(nrDMsPerBlock, 1, 1);
+	localSize = cl::NDRange(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock);
 
 	this->gflop = giga(static_cast< long long unsigned int >(observation->getNrDMs()) * observation->getNrPeriods() * observation->getNrSamplesPerSecond());
 
 	this->compile();
 }
 
-template< typename T > void Folding< T >::operator()(unsigned int second, CLData< T > * input, CLData< T > * output, CLData< unsigned int > * counters) throw (OpenCLError) {
-	this->setArgument(0, second);
-	this->setArgument(1, *(input->getDeviceData()));
-	this->setArgument(2, *(output->getDeviceData()));
-	this->setArgument(3, *(counters->getDeviceData()));
+template< typename T > void Folding< T >::operator()(CLData< T > * input, CLData< T > * output, CLData< unsigned int > * counters) throw (OpenCLError) {
+	this->setArgument(0, *(input->getDeviceData()));
+	this->setArgument(1, *(output->getDeviceData()));
+	this->setArgument(2, *(counters->getDeviceData()));
 
 	this->run(globalSize, localSize);
 }
 
 template< typename T > inline void Folding< T >::setNrDMsPerBlock(unsigned int DMs) {
 	nrDMsPerBlock = DMs;
+}
+
+template< typename T > inline void Folding< T >::setNrPeriodsPerBlock(unsigned int periods) {
+	nrPeriodsPerBlock = periods;
+}
+
+template< typename T > inline void Folding< T >::setNrBinsPerBlock(unsigned int bins) {
+	nrBinsPerBlock = bins;
 }
 
 template< typename T > inline void Folding< T >::setObservation(Observation< T > * obs) {
