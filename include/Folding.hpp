@@ -101,20 +101,25 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	this->code = new string();
 	*(this->code) = "__kernel void " + this->name + "(__global const " + this->dataType + " * const restrict samples, __global " + this->dataType + " * const restrict bins, __global unsigned int * const restrict counters) {\n"
 	"<%DEFS%>"
+	"<%LOADS%>"
 	"\n"
 	"<%COMPUTE%>"
 	"\n"
 	"<%STORE%>"
 	"}\n";
 
-	string defsTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n"
-		"const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + nrPeriodsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(1) + (<%PERIOD_NUM%> * " + nrPeriodsPerBlock_s + ");\n"
-		"const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n"
-		"const unsigned int period<%PERIOD_NUM%>Value = (period<%PERIOD_NUM%> + 1) * " + nrBins_s + ";\n"
+	string defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
+
+	string defsPeriodTemplate = "const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + nrPeriodsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(1) + (<%PERIOD_NUM%> * " + nrPeriodsPerBlock_s + ");\n"
+		"const unsigned int period<%PERIOD_NUM%>Value = (period<%PERIOD_NUM%> + 1) * " + nrBins_s + ";\n";
+
+	string defsTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n"
 		"unsigned int foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
 		+ this->dataType + " foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
-		"const unsigned int pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = counters[(bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
-	
+		"const unsigned int pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
+		
+	string loadsTemplate = "pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = counters[(bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
+
 	string computeTemplate = "unsigned int sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = (bin<%BIN_NUM%> * period<%PERIOD_NUM%>) + bin<%BIN_NUM%> + ((pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> / (period<%PERIOD_NUM%> + 1)) * period<%PERIOD_NUM%>Value) + (pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % (period<%PERIOD_NUM%> + 1));\n"
 	"if ( (sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % "+ nrSamplesPerSecond_s + ") == 0 ) {\n"
 	"sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
@@ -143,13 +148,24 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	// End kernel's template
 
 	string * defs = new string();
+	string * loads = new string();
 	string * computes = new string();
 	string * stores = new string();
 	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
 		string * DM_s = toString< unsigned int >(DM);
+		string * temp = 0;
+
+		temp = replace(&defsDMTemplate, "<%DM_NUM%>", *DM_s);
+		defs->append(*temp);
+		delete temp;
 
 		for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
 			string * period_s = toString< unsigned int >(period);
+			string * temp = 0;
+
+			temp = replace(&defsPeriodTemplate, "<%PERIOD_NUM%>", *period_s);
+			defs->append(*temp);
+			delete temp;
 
 			for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
 				string * bin_s = toString< unsigned int >(bin);
@@ -159,6 +175,12 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 				temp = replace(temp, "<%PERIOD_NUM%>", *period_s, true);
 				temp = replace(temp, "<%DM_NUM%>", *DM_s, true);
 				defs->append(*temp);
+				delete temp;
+
+				temp = replace(&loadsTemplate, "<%BIN_NUM%>", *bin_s);
+				temp = replace(temp, "<%PERIOD_NUM%>", *period_s, true);
+				temp = replace(temp, "<%DM_NUM%>", *DM_s, true);
+				loads->append(*temp);
 				delete temp;
 
 				temp = replace(&computeTemplate, "<%BIN_NUM%>", *bin_s);
