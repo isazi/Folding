@@ -56,6 +56,7 @@ const string typeName("float");
 const unsigned int maxThreadsPerBlock = 1024;
 const unsigned int maxThreadsMultiplier = 512;
 const unsigned int maxItemsPerThread = 256;
+const unsigned int maxItemsMultiplier = 256;
 const unsigned int padding = 32;
 
 // Common parameters
@@ -110,7 +111,7 @@ int main(int argc, char * argv[]) {
 	initializeOpenCL(clPlatformID, 1, clPlatforms, clContext, clDevices, clQueues);
 
 	cout << fixed << endl;
-	cout << "# nrDMs nrPeriods nrDMsPerBlock nrPeriodsPerBlock nrBinsPerBlock GFLOP/s err time err" << endl << endl;
+	cout << "# nrDMs nrPeriods nrDMsPerBlock nrPeriodsPerBlock nrBinsPerBlock nrDMsPerThread nrPeriodsPerThread nrBinsPerThread GFLOP/s err time err" << endl << endl;
 
 	for ( unsigned int nrDMs = 2; nrDMs <= 4096; nrDMs *= 2 )	{
 		observation.setNrDMs(nrDMs);
@@ -151,59 +152,82 @@ int main(int argc, char * argv[]) {
 			}
 
 			for ( vector< unsigned int >::iterator DMs = DMsPerBlock.begin(); DMs != DMsPerBlock.end(); DMs++ ) {
-				for (unsigned int periodsPerBlock = 1; periodsPerBlock < maxThreadsMultiplier; periodsPerBlock++ ) {
+				for (unsigned int periodsPerBlock = 1; periodsPerBlock <= maxThreadsMultiplier; periodsPerBlock++ ) {
 					if ( (*DMs * periodsPerBlock) > maxThreadsPerBlock ) {
 						break;
-					}
-					if ( (observation.getNrPeriods() % periodsPerBlock) != 0 ) {
+					} else if ( (observation.getNrPeriods() % periodsPerBlock) != 0 ) {
 						continue;
 					}
 
-					for ( unsigned int binsPerBlock = 1; binsPerBlock < maxThreadsMultiplier; binsPerBlock++ ) {
+					for ( unsigned int binsPerBlock = 1; binsPerBlock <= maxThreadsMultiplier; binsPerBlock++ ) {
 						if ( (*DMs * periodsPerBlock * binsPerBlock) > maxThreadsPerBlock ) {
 							break;
-						}
-						if ( (observation.getNrBins() % binsPerBlock) != 0 ) {
+						} else if ( (observation.getNrBins() % binsPerBlock) != 0 ) {
 							continue;
 						}
 
-						double Acur = 0.0;
-						double Aold = 0.0;
-						double Vcur = 0.0;
-						double Vold = 0.0;
+						for ( unsigned int DMsPerThread = 1; DMsPerThread <= maxItemsPerThread; DMsPerThread++ ) {
+							if ( (observation.getNrDMs() % (*DMs * DMsPerThread)) != 0 ) {
+								continue;
+							}
 
-						try {
-							// Generate kernel
-							Folding< dataType > clFold("clFold", typeName);
-							clFold.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
-							clFold.setObservation(&observation);
-							clFold.setNrDMsPerBlock(*DMs);
-							clFold.setNrPeriodsPerBlock(periodsPerBlock);
-							clFold.setNrBinsPerBlock(binsPerBlock);
-							clFold.generateCode();
+							for ( unsigned int periodsPerThread = 1; periodsPerThread <= maxItemsPerThread; periodsPerThread++ ) {
+								if ( (DMsPerThread * periodsPerThread) > maxItemsPerThread ) {
+									break;
+								} else if ( (observation.getNrPeriods() % (periodsPerBlock * periodsPerThread)) != 0 ) {
+									continue;
+								}
 
-							clFold(dedispersedData, foldedData, counterData);
-							(clFold.getTimer()).reset();
-							for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
-								clFold(dedispersedData, foldedData, counterData);
-								
-								if ( iteration == 0 ) {
-									Acur = clFold.getGFLOP() / clFold.getTimer().getLastRunTime();
-								} else {
-									Aold = Acur;
-									Vold = Vcur;
+								for ( unsigned int binsPerThread = 1; binsPerThread <= maxItemsPerThread; binsPerThread++ ) {
+									if ( (DMsPerThread * periodsPerThread * binsPerThread) > maxItemsPerThread ) {
+										break;
+									} else if ( (observation.getNrBins() % (binsPerBlock * binsPerThread))) != 0 ) {
+										continue;
+									}
 
-									Acur = Aold + (((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Aold) / (iteration + 1));
-									Vcur = Vold + (((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Aold) * ((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Acur));
+									double Acur = 0.0;
+									double Aold = 0.0;
+									double Vcur = 0.0;
+									double Vold = 0.0;
+
+									try {
+										// Generate kernel
+										Folding< dataType > clFold("clFold", typeName);
+										clFold.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
+										clFold.setObservation(&observation);
+										clFold.setNrDMsPerBlock(*DMs);
+										clFold.setNrPeriodsPerBlock(periodsPerBlock);
+										clFold.setNrBinsPerBlock(binsPerBlock);
+										clFold.setNrDMsPerThread(DMsPerThread);
+										clFold.setNrPeriodsPerThread(periodsPerThread);
+										clFold.setNrBinsPerThread(binsPerThread);
+										clFold.generateCode();
+
+										clFold(dedispersedData, foldedData, counterData);
+										(clFold.getTimer()).reset();
+										for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
+											clFold(dedispersedData, foldedData, counterData);
+											
+											if ( iteration == 0 ) {
+												Acur = clFold.getGFLOP() / clFold.getTimer().getLastRunTime();
+											} else {
+												Aold = Acur;
+												Vold = Vcur;
+
+												Acur = Aold + (((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Aold) / (iteration + 1));
+												Vcur = Vold + (((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Aold) * ((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Acur));
+											}
+										}
+										Vcur = sqrt(Vcur / nrIterations);
+
+										cout << nrDMs << " " << nrPeriods << " " << *DMs << " " << periodsPerBlock << " " << binsPerBlock << " " << DMsPerThread << " " << periodsPerThread << " " << binsPerThread << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << endl;
+									} catch ( OpenCLError err ) {
+										cerr << err.what() << endl;
+										continue;
+									}
 								}
 							}
-							Vcur = sqrt(Vcur / nrIterations);
-
-							cout << nrDMs << " " << nrPeriods << " " << *DMs << " " << periodsPerBlock << " " << binsPerBlock << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << endl;
-						} catch ( OpenCLError err ) {
-							cerr << err.what() << endl;
-							continue;
-						}		
+						}
 					}
 				}
 			}
