@@ -152,7 +152,7 @@ int main(int argc, char * argv[]) {
 
 			for ( vector< unsigned int >::iterator DMs = DMsPerBlock.begin(); DMs != DMsPerBlock.end(); DMs++ ) {
 				for (unsigned int periodsPerBlock = 1; periodsPerBlock < maxThreadsMultiplier; periodsPerBlock++ ) {
-					if ( (DMsPerBlock * periodsPerBlock) > maxThreadsPerBlock ) {
+					if ( (*DMs * periodsPerBlock) > maxThreadsPerBlock ) {
 						break;
 					}
 					if ( (observation.getNrPeriods() % periodsPerBlock) != 0 ) {
@@ -160,7 +160,7 @@ int main(int argc, char * argv[]) {
 					}
 
 					for ( unsigned int binsPerBlock = 1; binsPerBlock < maxThreadsMultiplier; binsPerBlock++ ) {
-						if ( (DMsPerBlock * periodsPerBlock * binsPerBlock) > maxThreadsPerBlock ) {
+						if ( (*DMs * periodsPerBlock * binsPerBlock) > maxThreadsPerBlock ) {
 							break;
 						}
 						if ( (observation.getNrBins() % binsPerBlock) != 0 ) {
