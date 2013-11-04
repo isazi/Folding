@@ -113,8 +113,9 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	string defsPeriodTemplate = "const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + nrPeriodsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(1) + (<%PERIOD_NUM%> * " + nrPeriodsPerBlock_s + ");\n"
 		"const unsigned int period<%PERIOD_NUM%>Value = (period<%PERIOD_NUM%> + 1) * " + nrBins_s + ";\n";
 
-	string defsTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n"
-		"unsigned int foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
+	string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
+
+	string defsTemplate = "unsigned int foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
 		+ this->dataType + " foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
 		"unsigned int pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
 		
@@ -159,13 +160,33 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 		defs->append(*temp);
 		delete temp;
 
+		delete DM_s;
+	}
+	for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
+		string * period_s = toString< unsigned int >(period);
+		string * temp = 0;
+
+		temp = replace(&defsPeriodTemplate, "<%PERIOD_NUM%>", *period_s);
+		defs->append(*temp);
+		delete temp;
+
+		delete period_s;
+	}
+	for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
+		string * bin_s = toString< unsigned int >(bin);
+		string * temp = 0;
+
+		temp = replace(&defsBinTemplate, "<%BIN_NUM%>", *bin_s);
+		defs->append(*temp);
+		delete temp;
+
+		delete bin_s;
+	}
+	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
+		string * DM_s = toString< unsigned int >(DM);
+
 		for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
 			string * period_s = toString< unsigned int >(period);
-			string * temp = 0;
-
-			temp = replace(&defsPeriodTemplate, "<%PERIOD_NUM%>", *period_s);
-			defs->append(*temp);
-			delete temp;
 
 			for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
 				string * bin_s = toString< unsigned int >(bin);
