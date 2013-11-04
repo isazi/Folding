@@ -204,6 +204,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 		delete DM_s;
 	}
 	this->code = replace(this->code, "<%DEFS%>", *defs, true);
+	this->code = replace(this->code, "<%LOADS%>", *loads, true);
 	this->code = replace(this->code, "<%COMPUTE%>", *computes, true);
 	this->code = replace(this->code, "<%STORE%>", *stores, true);
 	delete defs;
