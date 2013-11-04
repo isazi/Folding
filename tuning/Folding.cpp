@@ -181,7 +181,7 @@ int main(int argc, char * argv[]) {
 								for ( unsigned int binsPerThread = 1; binsPerThread <= maxItemsPerThread; binsPerThread++ ) {
 									if ( (DMsPerThread * periodsPerThread * binsPerThread) > maxItemsPerThread ) {
 										break;
-									} else if ( (observation.getNrBins() % (binsPerBlock * binsPerThread))) != 0 ) {
+									} else if ( (observation.getNrBins() % (binsPerBlock * binsPerThread)) != 0 ) {
 										continue;
 									}
 
