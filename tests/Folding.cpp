@@ -169,6 +169,8 @@ int main(int argc, char *argv[]) {
 	// Check
 	CLData< dataType > * CPUFolded = new CLData<dataType >("CPUFolded", true);
 	CLData< unsigned int > * CPUCounter = new CLData< unsigned int >("CPUCounter", true);
+	CPUFolded.allocateHostData(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
+	CPUCounter.allocateHostData(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
 	folding(0, observation, dedispersedData->getHostData(), CPUFolded->getHostData(), CPUCounter->getHostData());
 	for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
 		for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
