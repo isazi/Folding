@@ -42,7 +42,6 @@ using std::numeric_limits;
 #include <InitializeOpenCL.hpp>
 #include <CLData.hpp>
 #include <utils.hpp>
-#include <Dedispersion.hpp>
 #include <Folding.hpp>
 #include <FoldingCPU.hpp>
 using isa::utils::ArgumentList;
