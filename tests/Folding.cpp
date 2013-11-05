@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		cout << "Wrong samples bin " + bin + ": " << wrongValuesBin << " (" << (wrongValuesBin * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods()) << "%)." << endl;
+		cout << "Wrong samples bin " << bin << ": " << wrongValuesBin << " (" << (wrongValuesBin * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods()) << "%)." << endl;
 	}	
 
 	cout << endl;
