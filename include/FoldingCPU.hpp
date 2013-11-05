@@ -43,21 +43,21 @@ template< typename T > void folding(const unsigned int second, const Observation
 
 // Implementation
 template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters) {
-	#pragma omp parallel for
-	for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
-		#pragma omp parallel for
-		for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex++ ) {
-			const unsigned int periodValue = observation.getFirstPeriod() + ( periodIndex * observation.getPeriodStep() );
-			
-			for ( unsigned int globalSample = 0; globalSample < observation.getNrSamplesPerSecond(); globalSample++ ) {
-				const unsigned int sample = ( second * observation.getNrSamplesPerSecond() ) + globalSample;
-				const float phase = ( sample / static_cast< float >(periodValue) ) - ( sample / periodValue );
-				const unsigned int bin = static_cast< unsigned int >(phase * static_cast< float >(observation.getNrBins()));
-				const unsigned int globalItem = ( ( ( dm * observation.getNrPeriods() ) + periodIndex ) * observation.getNrPaddedBins() ) + bin;
+	for ( unsigned int globalSample = 0; globalSample < observation.getNrSamplesPerSecond(); globalSample++ ) {
+		const unsigned int sample = ( second * observation.getNrSamplesPerSecond() ) + globalSample;
 
-				const T pValue = bins[globalItem];
-				T cValue = samples[( dm * observation.getNrSamplesPerPaddedSecond() ) + globalSample];
+		#pragma omp parallel for schedule(static)
+		for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex++ ) {
+			const unsigned int periodValue = observation.getNrBins() * (periodIndex + 1);
+			const float phase = ( sample / static_cast< float >(periodValue) ) - ( sample / periodValue );
+			const unsigned int bin = static_cast< unsigned int >(phase * static_cast< float >(observation.getNrBins()));
+			
+			#pragma omp parallel for schedule(static)
+			for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
+				const unsigned int globalItem = (bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm;
+				T cValue = samples[(globalSample * observation.getNrPaddedDMs()) + dm];
 				const unsigned int pCounter = counters[globalItem];
+				const T pValue = bins[globalItem];
 				unsigned int cCounter = pCounter + 1;
 
 				if ( pCounter != 0 ) {
