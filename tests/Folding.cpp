@@ -173,16 +173,22 @@ int main(int argc, char *argv[]) {
 	CPUCounter->allocateHostData(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
 	folding(0, observation, dedispersedData->getHostData(), CPUFolded->getHostData(), CPUCounter->getHostData());
 	for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
+		long long unsigned int wrongValuesBin = 0;
+
 		for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
 			for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
 				const unsigned int dataItem = (bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + DM;
 				if ( !same(CPUFolded->getHostDataItem(dataItem), foldedData->getHostDataItem(dataItem)) ) {
 					wrongValues++;
+					wrongValuesBin++;
 				}
 			}
 		}
+
+		cout << "Wrong samples bin " + bin + ": " << wrongValuesBin << " (" << (wrongValuesBin * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods()) << "%)." << endl;
 	}	
 
+	cout << endl;
 	cout << "Wrong samples: " << wrongValues << " (" << (wrongValues * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrBins()) << "%)." << endl;
 	cout << endl;
 
