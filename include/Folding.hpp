@@ -181,14 +181,14 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 
 		delete bin_s;
 	}
-	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
-		string * DM_s = toString< unsigned int >(DM);
-
+	for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
+		string * bin_s = toString< unsigned int >(bin);
+		
 		for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
 			string * period_s = toString< unsigned int >(period);
-
-			for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
-				string * bin_s = toString< unsigned int >(bin);
+			
+			for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
+				string * DM_s = toString< unsigned int >(DM);
 				string * temp = 0;
 
 				temp = replace(&defsTemplate, "<%BIN_NUM%>", *bin_s);
@@ -203,16 +203,34 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 				loads->append(*temp);
 				delete temp;
 
-				temp = replace(&computeTemplate, "<%BIN_NUM%>", *bin_s);
-				temp = replace(temp, "<%PERIOD_NUM%>", *period_s, true);
-				temp = replace(temp, "<%DM_NUM%>", *DM_s, true);
-				computes->append(*temp);
-				delete temp;
-
 				temp = replace(&storeTemplate, "<%BIN_NUM%>", *bin_s);
 				temp = replace(temp, "<%PERIOD_NUM%>", *period_s, true);
 				temp = replace(temp, "<%DM_NUM%>", *DM_s, true);
 				stores->append(*temp);
+				delete temp;
+
+				delete bin_s;
+			}
+
+			delete period_s;
+		}
+
+		delete DM_s;
+	}
+	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
+		string * DM_s = toString< unsigned int >(DM);
+
+		for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
+				string * bin_s = toString< unsigned int >(bin);
+
+				for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
+				string * period_s = toString< unsigned int >(period);
+				string * temp = 0;
+
+				temp = replace(&computeTemplate, "<%BIN_NUM%>", *bin_s);
+				temp = replace(temp, "<%PERIOD_NUM%>", *period_s, true);
+				temp = replace(temp, "<%DM_NUM%>", *DM_s, true);
+				computes->append(*temp);
 				delete temp;
 
 				delete bin_s;
