@@ -209,13 +209,13 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 				stores->append(*temp);
 				delete temp;
 
-				delete bin_s;
+				delete DM_s;		
 			}
 
 			delete period_s;
 		}
 
-		delete DM_s;
+		delete bin_s;
 	}
 	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
 		string * DM_s = toString< unsigned int >(DM);
@@ -233,10 +233,10 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 				computes->append(*temp);
 				delete temp;
 
-				delete bin_s;
+				delete period_s;
 			}
 
-			delete period_s;
+			delete bin_s;
 		}
 
 		delete DM_s;
