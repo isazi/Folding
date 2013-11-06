@@ -76,6 +76,7 @@ template< typename T > void folding(const Observation< T > & observation, const 
 	for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex++ ) {
 		unsigned int periodValue = (periodIndex + 1) * observation.getNrBins();
 
+		#pragma omp parallel for schedule(static)
 		for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
 			for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
 				const unsigned int pCounter = counters[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm];
