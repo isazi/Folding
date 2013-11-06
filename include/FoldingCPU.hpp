@@ -39,6 +39,7 @@ namespace PulsarSearch {
 
 // OpenMP folding algorithm
 template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters);
+template< typename T > void folding(const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters);
 
 
 // Implementation
@@ -65,6 +66,47 @@ template< typename T > void folding(const unsigned int second, const Observation
 				}
 				bins[globalItem] = cValue;
 				counters[globalItem] = cCounter;
+			}
+		}
+	}
+}
+
+template< typename T > void folding(const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters) {
+	#pragma omp parallel for schedule(static)
+	for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex++ ) {
+		unsigned int periodValue = (periodIndex + 1) * observation.getNrBins();
+
+		for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
+			for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
+				const unsigned int pCounter = counters[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm];
+				unsigned int sample = (bin * periodIndex) + bin + ((pCounter / (periodIndex + 1)) * periodValue) + (pCounter % (periodIndex + 1));
+				T foldedSample = 0;
+				unsigned int foldedCounter = 0;
+
+				if ( (sample % observation.getNrSamplesPerSecond()) == 0 ) {
+					sample = 0;
+				} else {
+					sample = (sample % observation.getNrSamplesPerSecond()) - (sample / observation.getNrSamplesPerSecond());
+				}
+				while ( sample < observation.getNrSamplesPerSecond() ) {
+					foldedSample += samples[(sample * observation.getNrPaddedDMs()) + dm];
+					foldedCounter++;
+
+					if ( (foldedCounter + pCounter) % (periodIndex + 1) == 0 ) {
+						sample += periodValue;
+					} else {
+						sample++;
+					}
+				}
+
+				if ( foldedCounter > 0 ) {
+					const T pValue = bins[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm];
+					float addedFraction = static_cast< float >(foldedCounter) / (foldedCounter + pCounter);
+
+					foldedSample /= foldedCounter;
+					counters[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm] = pCounter + foldedCounter;
+					bins[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm] = (addedFraction * foldedSample) + ((1.0f - addedFraction) * pValue);
+				}
 			}
 		}
 	}
