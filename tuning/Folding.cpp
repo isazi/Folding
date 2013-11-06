@@ -78,6 +78,7 @@ const unsigned int nrBins = 256;
 
 int main(int argc, char * argv[]) {
 	unsigned int nrDMs = 0;
+	unsigned int lowerNrThreads = 0;
 	unsigned int nrIterations = 0;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
@@ -94,6 +95,7 @@ int main(int argc, char * argv[]) {
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
 		nrIterations = args.getSwitchArgument< unsigned int >("-iterations");
 		nrDMs = args.getSwitchArgument< unsigned int >("-dms");
+		lowerNrThreads = args.getSwitchArgument< unsigned int >("-lnt");
 	} catch ( exception & err ) {
 		cerr << err.what() << endl;
 		return 1;
@@ -146,7 +148,7 @@ int main(int argc, char * argv[]) {
 
 		// Find the parameters
 		vector< unsigned int > DMsPerBlock;
-		for ( unsigned int DMs = 2; DMs <= maxThreadsPerBlock; DMs++ ) {
+		for ( unsigned int DMs = lowerNrThreads; DMs <= maxThreadsPerBlock; DMs++ ) {
 			if ( (observation.getNrDMs() % DMs) == 0 ) {
 				DMsPerBlock.push_back(DMs);
 			}
