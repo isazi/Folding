@@ -217,7 +217,7 @@ int main(int argc, char * argv[]) {
 								}
 								Vcur = sqrt(Vcur / nrIterations);
 
-								cout << nrDMs << " " << nrPeriods << " " << *DMs << " " << periodsPerBlock << " " << binsPerBlock << " " << DMsPerThread << " " << periodsPerThread << " " << binsPerThread << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << endl;
+								cout << observation.getNrDMs() << " " << observation.getNrPeriods() << " " << *DMs << " " << periodsPerBlock << " " << binsPerBlock << " " << DMsPerThread << " " << periodsPerThread << " " << binsPerThread << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << endl;
 							} catch ( OpenCLError err ) {
 								cerr << err.what() << endl;
 								continue;
