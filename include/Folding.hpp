@@ -103,6 +103,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	"<%DEFS%>"
 	"<%LOADS%>"
 	"\n"
+	"unsigned int sample = 0;"
 	"<%COMPUTE%>"
 	"\n"
 	"<%STORE%>"
@@ -121,19 +122,19 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 		
 	string loadsTemplate = "pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = counters[(bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
 
-	string computeTemplate = "unsigned int sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = (bin<%BIN_NUM%> * period<%PERIOD_NUM%>) + bin<%BIN_NUM%> + ((pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> / (period<%PERIOD_NUM%> + 1)) * period<%PERIOD_NUM%>Value) + (pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % (period<%PERIOD_NUM%> + 1));\n"
-	"if ( (sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % "+ nrSamplesPerSecond_s + ") == 0 ) {\n"
-	"sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
+	string computeTemplate = "sample = (bin<%BIN_NUM%> * period<%PERIOD_NUM%>) + bin<%BIN_NUM%> + ((pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> / (period<%PERIOD_NUM%> + 1)) * period<%PERIOD_NUM%>Value) + (pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % (period<%PERIOD_NUM%> + 1));\n"
+	"if ( (sample % "+ nrSamplesPerSecond_s + ") == 0 ) {\n"
+	"sample = 0;\n"
 	"} else {\n"
-	"sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = (sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % "+ nrSamplesPerSecond_s + ") - (sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> / "+ nrSamplesPerSecond_s + ");\n"
+	"sample = (sample % "+ nrSamplesPerSecond_s + ") - (sample / "+ nrSamplesPerSecond_s + ");\n"
 	"}\n"
-	"while ( sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> < " + nrSamplesPerSecond_s + " ) {\n"
-	"foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> += samples[(sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n"
+	"while ( sample < " + nrSamplesPerSecond_s + " ) {\n"
+	"foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n"
 	"foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
 	"if ( ((foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) % (period<%PERIOD_NUM%> + 1)) == 0 ) {\n"
-	"sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> += period<%PERIOD_NUM%>Value;\n"
+	"sample += period<%PERIOD_NUM%>Value;\n"
 	"} else {\n"
-	"sampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
+	"sample++;\n"
 	"}\n"
 	"}\n";
 
