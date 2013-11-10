@@ -118,6 +118,7 @@ int main(int argc, char * argv[]) {
 
 	// Allocate memory
 	dedispersedData->allocateHostData(observation.getNrSamplesPerSecond() * observation.getNrPaddedDMs());
+	dedispersedData->blankHostData();
 	foldedData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
 	foldedData->blankHostData();
 	counterData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
@@ -216,9 +217,17 @@ int main(int argc, char * argv[]) {
 			clFold.setNrBinsPerThread((*parameters)[5]);
 			clFold.generateCode();
 
+			// Copy memory
+			dedispersedData->copyHostToDevice();
+			foldedData->copyHostToDevice();
+			counterData->copyHostToDevice();
+
 			clFold(dedispersedData, foldedData, counterData);
 			(clFold.getTimer()).reset();
 			for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
+				foldedData->copyHostToDevice();
+				counterData->copyHostToDevice();
+				
 				clFold(dedispersedData, foldedData, counterData);
 				
 				if ( iteration == 0 ) {
