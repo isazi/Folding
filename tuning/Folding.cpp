@@ -127,6 +127,7 @@ int main(int argc, char * argv[]) {
 
 	try {
 		dedispersedData->allocateDeviceData();
+		dedispersedData->copyHostToDevice();
 		foldedData->allocateDeviceData();
 		foldedData->copyHostToDevice();
 		counterData->allocateDeviceData();
@@ -212,7 +213,6 @@ int main(int argc, char * argv[]) {
 			clFold.generateCode();
 
 			// Copy memory
-			dedispersedData->copyHostToDevice();
 			foldedData->copyHostToDevice();
 			counterData->copyHostToDevice();
 
