@@ -212,16 +212,14 @@ int main(int argc, char * argv[]) {
 			clFold.setNrBinsPerThread((*parameters)[5]);
 			clFold.generateCode();
 
-			// Copy memory
 			foldedData->copyHostToDevice();
 			counterData->copyHostToDevice();
-
 			clFold(dedispersedData, foldedData, counterData);
 			(clFold.getTimer()).reset();
+			
 			for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
 				foldedData->copyHostToDevice();
 				counterData->copyHostToDevice();
-				
 				clFold(dedispersedData, foldedData, counterData);
 				
 				if ( iteration == 0 ) {
