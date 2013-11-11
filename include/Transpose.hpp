@@ -75,8 +75,8 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	delete this->code;
 	this->code = new string();
 	*(this->code) = "__kernel void Transpose(__global const " + this->dataType + " * const restrict input, __global " + this->dataType + " * const restrict output) {\n"
-	"unsigned int baseDM = get_group_id(1) * " + nrDMsPerBlock_s + ";\n"
-	"unsigned int baseSample = (get_group_id(0) * " + nrSamplesPerBlock_s + ") + get_local_id(0);\n"
+	"unsigned int baseDM = get_group_id(0) * " + nrDMsPerBlock_s + ";\n"
+	"unsigned int baseSample = (get_group_id(1) * " + nrSamplesPerBlock_s + ") + get_local_id(0);\n"
 	"__local "+ this->dataType + " tempStorage[" + localElements_s + "];"
 	"\n"
 	"for ( unsigned int DM = baseDM; DM < baseDM + " + nrDMsPerBlock_s + "; DM++ ) {\n"
@@ -84,8 +84,8 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"tempStorage[((DM - baseDM) * " + nrSamplesPerBlock_s + ") + ( sample - baseSample)] = input[(DM * " + nrSamplesPerPaddedSecond_s + ") + sample];\n"
 	"}\n"
 	"}\n"
-	"baseSample = (get_group_id(0) * " + nrSamplesPerBlock_s + ");\n"
-	"baseDM = get_group_id(1) * " + nrDMsPerBlock_s + " + get_local_id(0);\n"
+	"baseSample = (get_group_id(1) * " + nrSamplesPerBlock_s + ");\n"
+	"baseDM = get_group_id(0) * " + nrDMsPerBlock_s + " + get_local_id(0);\n"
 	"for ( unsigned int sample = baseSample; sample < baseSample + " + nrSamplesPerBlock_s + "; sample++ ) {\n"
 	"for ( unsigned int DM = baseDM; DM < baseDM + " + nrDMsPerBlock_s + "; DM += " + nrThreadsPerBlock_s + " ) {\n"
 	"output[(sample * " + nrPaddedDMs_s + ") + DM] = tempStorage[((DM - baseDM) * " + nrSamplesPerBlock_s + ") + ( sample - baseSample)];"
@@ -94,7 +94,7 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"}\n";
 	// End kernel's template
 
-	globalSize = cl::NDRange(observation->getNrSamplesPerSecond() / nrSamplesPerBlock, observation->getNrDMs() / nrDMsPerBlock);
+	globalSize = cl::NDRange(observation->getNrDMs() / nrDMsPerBlock, observation->getNrSamplesPerSecond() / nrSamplesPerBlock);
 	localSize = cl::NDRange(nrThreadsPerBlock, 1);
 
 	this->gb = giga(static_cast< long long unsigned int >(observation->getNrDMs()) * observation->getNrSamplesPerSecond() * 2 * sizeof(T));
