@@ -59,16 +59,6 @@ const unsigned int maxItemsPerThread = 256;
 const unsigned int maxItemsMultiplier = 256;
 const unsigned int padding = 32;
 
-// Common parameters
-const unsigned int nrBeams = 1;
-const unsigned int nrStations = 64;
-// LOFAR
-//const unsigned int nrSamplesPerSecond = 200000;
-// Apertif
-const unsigned int nrSamplesPerSecond = 20000;
-// Periods
-const unsigned int nrBins = 256;
-
 
 int main(int argc, char * argv[]) {
 	unsigned int lowerNrThreads = 0;
@@ -90,6 +80,8 @@ int main(int argc, char * argv[]) {
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
 		lowerNrThreads = args.getSwitchArgument< unsigned int >("-lnt");
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
+		observation.setNrBins(args.getSwitchArgument< unsigned int >("-bins"));
+		observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 	} catch ( exception & err ) {
 		cerr << err.what() << endl;
 		return 1;
@@ -97,8 +89,8 @@ int main(int argc, char * argv[]) {
 
 	// Setup of the observation
 	observation.setPadding(padding);
-	observation.setNrSamplesPerSecond(nrSamplesPerSecond);
-	observation.setNrBins(nrBins);
+	observation.setFirstPeriod(observation.getNrBins());
+	observation.setPeriodStep(observation.getNrBins());
 	
 	cl::Context * clContext = new cl::Context();
 	vector< cl::Platform > * clPlatforms = new vector< cl::Platform >();
@@ -108,7 +100,7 @@ int main(int argc, char * argv[]) {
 	initializeOpenCL(clPlatformID, 1, clPlatforms, clContext, clDevices, clQueues);
 
 	cout << fixed << endl;
-	cout << "# nrDMs nrPeriods nrDMsPerBlock nrPeriodsPerBlock nrBinsPerBlock nrDMsPerThread nrPeriodsPerThread nrBinsPerThread GFLOP/s err time err" << endl << endl;
+	cout << "# nrDMs nrPeriods nrBins nrSamplesPerSecond nrDMsPerBlock nrPeriodsPerBlock nrBinsPerBlock nrDMsPerThread nrPeriodsPerThread nrBinsPerThread GFLOP/s err time err" << endl << endl;
 
 	// Allocate memory
 	dedispersedData->allocateHostData(observation.getNrSamplesPerSecond() * observation.getNrPaddedDMs());
@@ -234,7 +226,7 @@ int main(int argc, char * argv[]) {
 			}
 			Vcur = sqrt(Vcur / nrIterations);
 
-			cout << observation.getNrDMs() << " " << observation.getNrPeriods() << " " << (*parameters)[0] << " " << (*parameters)[1] << " " << (*parameters)[2] << " " << (*parameters)[3] << " " << (*parameters)[4] << " " << (*parameters)[5] << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << endl;
+			cout << observation.getNrDMs() << " " << observation.getNrPeriods() << " " << observation.getNrBins() << " " << observation.getNrSamplesPerSecond() << " " << (*parameters)[0] << " " << (*parameters)[1] << " " << (*parameters)[2] << " " << (*parameters)[3] << " " << (*parameters)[4] << " " << (*parameters)[5] << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << endl;
 		} catch ( OpenCLError err ) {
 			cerr << err.what() << endl;
 			continue;
