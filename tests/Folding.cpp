@@ -56,19 +56,10 @@ typedef float dataType;
 const string typeName("float");
 const unsigned int padding = 32;
 
-// Common parameters
-const unsigned int nrBeams = 1;
-const unsigned int nrStations = 64;
 // LOFAR
-/*const float minFreq = 138.965f;
-const float channelBandwidth = 0.195f;
-const unsigned int nrSamplesPerSecond = 200000;
-const unsigned int nrChannels = 32;*/
+//const unsigned int nrSamplesPerSecond = 200000;
 // Apertif
-const float minFreq = 1425.0f;
-const float channelBandwidth = 0.2929f;
 const unsigned int nrSamplesPerSecond = 20000;
-const unsigned int nrChannels = 1024;
 // DMs
 const unsigned int nrDMs = 256;
 // Periods
