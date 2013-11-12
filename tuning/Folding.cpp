@@ -157,14 +157,14 @@ int main(int argc, char * argv[]) {
 					for ( unsigned int periodsPerThread = 1; periodsPerThread <= maxItemsMultiplier; periodsPerThread++ ) {
 						if ( observation.getNrPeriods() % (periodsPerBlock * periodsPerThread) != 0 ) {
 							continue;
-						} else if ( (DMsPerThread + (2 * periodsPerThread)) + (2 * DMsPerThread * periodsPerThread) > maxItemsPerThread ) {
+						} else if ( (DMsPerThread + (3 * periodsPerThread)) + (2 * DMsPerThread * periodsPerThread) > maxItemsPerThread ) {
 							break;
 						}
 
 						for ( unsigned int binsPerThread = 1; binsPerThread <= maxItemsMultiplier; binsPerThread++ ) {
 							if ( observation.getNrBins() % (binsPerBlock * binsPerThread) != 0 ) {
 								continue;
-							} else if ( (DMsPerThread + (2 * periodsPerThread) + binsPerThread) + (2 * DMsPerThread * periodsPerThread * binsPerThread) > maxItemsPerThread ) {
+							} else if ( (DMsPerThread + (3 * periodsPerThread) + binsPerThread) + (2 * DMsPerThread * periodsPerThread * binsPerThread) > maxItemsPerThread ) {
 								break;
 							}
 
