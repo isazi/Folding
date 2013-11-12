@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012
+ * Copyright (C) 2013
  * Alessio Sclocco <a.sclocco@vu.nl>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,17 +30,17 @@ using std::pow;
 using std::ceil;
 
 #include <Exceptions.hpp>
-#include <CLData.hpp>
-#include <utils.hpp>
-#include <Kernel.hpp>
-#include <Observation.hpp>
 using isa::Exceptions::OpenCLError;
+#include <CLData.hpp>
 using isa::OpenCL::CLData;
+#include <utils.hpp>
 using isa::utils::giga;
 using isa::utils::toStringValue;
 using isa::utils::toString;
 using isa::utils::replace;
+#include <Kernel.hpp>
 using isa::OpenCL::Kernel;
+#include <Observation.hpp>
 using AstroData::Observation;
 
 
@@ -89,6 +89,8 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	string nrSamplesPerSecond_s = toStringValue< unsigned int >(observation->getNrSamplesPerSecond());
 	string nrPaddedDMs_s  = toStringValue< unsigned int >(observation->getNrPaddedDMs());
 	string nrPeriods_s = toStringValue< unsigned int >(observation->getNrPeriods());
+	string firstPeriod_s = toStringValue< unsigned int >(observation->getFirstPeriod());
+	string periodStep_s = toStringValue< unsigned int >(observation->getPeriodStep());
 	string nrBins_s = toStringValue< unsigned int >(observation->getNrBins());
 	string nrDMsPerBlock_s = toStringValue< unsigned int >(nrDMsPerBlock);
 	string nrDMsPerThread_s = toStringValue< unsigned int >(nrDMsPerThread);
@@ -112,7 +114,8 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	string defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
 
 	string defsPeriodTemplate = "const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + nrPeriodsPerBlock_s + " * " + nrPeriodsPerThread_s+  ") + get_local_id(1) + (<%PERIOD_NUM%> * " + nrPeriodsPerBlock_s + ");\n"
-		"const unsigned int period<%PERIOD_NUM%>Value = (period<%PERIOD_NUM%> + 1) * " + nrBins_s + ";\n";
+		"const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n"
+		"const unsigned int samplesPerBin<%PERIOD_NUM%> = period<%PERIOD_NUM%>Value / " + firstPeriod_s + ";\n";
 
 	string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
 
@@ -122,7 +125,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 		
 	string loadsTemplate = "pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = counters[(bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
 
-	string computeTemplate = "sample = (bin<%BIN_NUM%> * period<%PERIOD_NUM%>) + bin<%BIN_NUM%> + ((pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> / (period<%PERIOD_NUM%> + 1)) * period<%PERIOD_NUM%>Value) + (pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % (period<%PERIOD_NUM%> + 1));\n"
+	string computeTemplate = "sample = (bin<%BIN_NUM%> * period<%PERIOD_NUM%>) + bin<%BIN_NUM%> + ((pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBin<%PERIOD_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBin<%PERIOD_NUM%>);\n"
 	"if ( (sample % "+ nrSamplesPerSecond_s + ") == 0 ) {\n"
 	"sample = 0;\n"
 	"} else {\n"
@@ -131,7 +134,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	"while ( sample < " + nrSamplesPerSecond_s + " ) {\n"
 	"foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n"
 	"foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
-	"if ( ((foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) % (period<%PERIOD_NUM%> + 1)) == 0 ) {\n"
+	"if ( ((foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBin<%PERIOD_NUM%>) == 0 ) {\n"
 	"sample += period<%PERIOD_NUM%>Value;\n"
 	"} else {\n"
 	"sample++;\n"
