@@ -74,7 +74,7 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 
 	delete this->code;
 	this->code = new string();
-	*(this->code) = "__kernel void Transpose(__global const " + this->dataType + " * const restrict input, __global " + this->dataType + " * const restrict output) {\n"
+	*(this->code) = "__kernel void " + this->name + "(__global const " + this->dataType + " * const restrict input, __global " + this->dataType + " * const restrict output) {\n"
 	"unsigned int baseDM = get_group_id(0) * " + nrDMsPerBlock_s + ";\n"
 	"unsigned int baseSample = (get_group_id(1) * " + nrSamplesPerBlock_s + ") + get_local_id(0);\n"
 	"__local "+ this->dataType + " tempStorage[" + localElements_s + "];"
