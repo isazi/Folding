@@ -104,10 +104,12 @@ int main(int argc, char *argv[]) {
 	dedispersedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 	transposeData->setCLContext(clContext);
 	transposeData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
+	transposeData->blankHostData();
 
 	try {
 		dedispersedData->allocateDeviceData();
 		transposeData->allocateDeviceData();
+		transposeData->copyHostToDevice();
 	} catch ( OpenCLError err ) {
 		cerr << err.what() << endl;
 		return 1;
