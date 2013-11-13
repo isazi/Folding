@@ -129,8 +129,6 @@ int main(int argc, char *argv[]) {
 		clTranspose.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
 		clTranspose.setObservation(&observation);
 		clTranspose.setNrThreadsPerBlock(32);
-		clTranspose.setNrDMsPerBlock(32);
-		clTranspose.setNrSamplesPerBlock(32);
 		clTranspose.generateCode();
 
 		dedispersedData->copyHostToDevice();
