@@ -122,6 +122,10 @@ template< typename T > inline void Transpose< T >::setNrSamplesPerBlock(unsigned
 	nrSamplesPerBlock = samples;
 }
 
+template< typename T > inline void Transpose< T >::setObservation(Observation< T > * obs) {
+	observation = obs;
+}
+
 } // PulsarSearch
 
 #endif // TRANSPOSE_HPP
