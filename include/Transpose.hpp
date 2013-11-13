@@ -44,15 +44,11 @@ public:
 	void operator()(CLData< T > * input, CLData< T > * output) throw (OpenCLError);
 
 	inline void setNrThreadsPerBlock(unsigned int threads);
-	inline void setNrDMsPerBlock(unsigned int DM);
-	inline void setNrSamplesPerBlock(unsigned int samples);
 
 	inline void setObservation(Observation< T > * obs);
 
 private:
 	unsigned int nrThreadsPerBlock;
-	unsigned int nrDMsPerBlock;
-	unsigned int nrSamplesPerBlock;
 	cl::NDRange globalSize;
 	cl::NDRange localSize;
 
@@ -61,41 +57,39 @@ private:
 
 
 // Implementation
-template< typename T > Transpose< T >::Transpose(string name, string dataType) : Kernel< T >(name, dataType), nrThreadsPerBlock(0), nrDMsPerBlock(0), nrSamplesPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0) {}
+template< typename T > Transpose< T >::Transpose(string name, string dataType) : Kernel< T >(name, dataType), nrThreadsPerBlock(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0) {}
 
 template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	// Begin kernel's template
-	string localElements_s = toStringValue< unsigned int >(nrDMsPerBlock * nrSamplesPerBlock);
+	string localElements_s = toStringValue< unsigned int >(nrThreadsPerBlock * nrThreadsPerBlock);
 	string nrThreadsPerBlock_s = toStringValue< unsigned int >(nrThreadsPerBlock);
-	string nrDMsPerBlock_s = toStringValue< unsigned int >(nrDMsPerBlock);
-	string nrSamplesPerBlock_s = toStringValue< unsigned int >(nrSamplesPerBlock);
 	string nrSamplesPerPaddedSecond_s = toStringValue< unsigned int >(observation->getNrSamplesPerPaddedSecond());
 	string nrPaddedDMs_s = toStringValue< unsigned int >(observation->getNrPaddedDMs());
 
 	delete this->code;
 	this->code = new string();
 	*(this->code) = "__kernel void " + this->name + "(__global const " + this->dataType + " * const restrict input, __global " + this->dataType + " * const restrict output) {\n"
-	"unsigned int baseDM = get_group_id(0) * " + nrDMsPerBlock_s + ";\n"
-	"unsigned int baseSample = (get_group_id(1) * " + nrSamplesPerBlock_s + ") + get_local_id(0);\n"
+	"unsigned int baseDM = get_group_id(0) * " + nrThreadsPerBlock_s + ";\n"
+	"unsigned int baseSample = (get_group_id(1) * " + nrThreadsPerBlock_s + ") + get_local_id(0);\n"
 	"__local "+ this->dataType + " tempStorage[" + localElements_s + "];"
 	"\n"
-	"for ( unsigned int DM = baseDM; DM < baseDM + " + nrDMsPerBlock_s + "; DM++ ) {\n"
-	"for ( unsigned int sample = baseSample; sample < baseSample + " + nrSamplesPerBlock_s + "; sample += " + nrThreadsPerBlock_s + " ) {\n"
-	"tempStorage[((DM - baseDM) * " + nrSamplesPerBlock_s + ") + ( sample - baseSample)] = input[(DM * " + nrSamplesPerPaddedSecond_s + ") + sample];\n"
+	"for ( unsigned int DM = baseDM; DM < baseDM + " + nrThreadsPerBlock_s + "; DM++ ) {\n"
+	"for ( unsigned int sample = baseSample; sample < baseSample + " + nrThreadsPerBlock_s + "; sample += " + nrThreadsPerBlock_s + " ) {\n"
+	"tempStorage[((DM - baseDM) * " + nrThreadsPerBlock_s + ") + ( sample - baseSample)] = input[(DM * " + nrSamplesPerPaddedSecond_s + ") + sample];\n"
 	"}\n"
 	"}\n"
 	"barrier(CLK_LOCAL_MEM_FENCE);\n"
-	"baseSample = (get_group_id(1) * " + nrSamplesPerBlock_s + ");\n"
-	"baseDM = get_group_id(0) * " + nrDMsPerBlock_s + " + get_local_id(0);\n"
-	"for ( unsigned int sample = baseSample; sample < baseSample + " + nrSamplesPerBlock_s + "; sample++ ) {\n"
-	"for ( unsigned int DM = baseDM; DM < baseDM + " + nrDMsPerBlock_s + "; DM += " + nrThreadsPerBlock_s + " ) {\n"
-	"output[(sample * " + nrPaddedDMs_s + ") + DM] = tempStorage[((DM - baseDM) * " + nrSamplesPerBlock_s + ") + ( sample - baseSample)];"
+	"baseSample = (get_group_id(1) * " + nrThreadsPerBlock_s + ");\n"
+	"baseDM = get_group_id(0) * " + nrThreadsPerBlock_s + " + get_local_id(0);\n"
+	"for ( unsigned int sample = baseSample; sample < baseSample + " + nrThreadsPerBlock_s + "; sample++ ) {\n"
+	"for ( unsigned int DM = baseDM; DM < baseDM + " + nrThreadsPerBlock_s + "; DM += " + nrThreadsPerBlock_s + " ) {\n"
+	"output[(sample * " + nrPaddedDMs_s + ") + DM] = tempStorage[((DM - baseDM) * " + nrThreadsPerBlock_s + ") + ( sample - baseSample)];"
 	"}\n"
 	"}\n"
 	"}\n";
 	// End kernel's template
 
-	globalSize = cl::NDRange(observation->getNrDMs() / nrDMsPerBlock, observation->getNrSamplesPerSecond() / nrSamplesPerBlock);
+	globalSize = cl::NDRange(observation->getNrDMs(), observation->getNrSamplesPerSecond());
 	localSize = cl::NDRange(nrThreadsPerBlock, 1);
 
 	this->gb = giga(static_cast< long long unsigned int >(observation->getNrDMs()) * observation->getNrSamplesPerSecond() * 2 * sizeof(T));
@@ -112,14 +106,6 @@ template< typename T > void Transpose< T >::operator()(CLData< T > * input, CLDa
 
 template< typename T > inline void Transpose< T >::setNrThreadsPerBlock(unsigned int threads) {
 	nrThreadsPerBlock = threads;
-}
-
-template< typename T > inline void Transpose< T >::setNrDMsPerBlock(unsigned int DMs) {
-	nrDMsPerBlock = DMs;
-}
-
-template< typename T > inline void Transpose< T >::setNrSamplesPerBlock(unsigned int samples) {
-	nrSamplesPerBlock = samples;
 }
 
 template< typename T > inline void Transpose< T >::setObservation(Observation< T > * obs) {
