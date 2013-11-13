@@ -64,26 +64,25 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	string localElements_s = toStringValue< unsigned int >(nrThreadsPerBlock * nrThreadsPerBlock);
 	string nrThreadsPerBlock_s = toStringValue< unsigned int >(nrThreadsPerBlock);
 	string nrSamplesPerPaddedSecond_s = toStringValue< unsigned int >(observation->getNrSamplesPerPaddedSecond());
+	string nrSamplesPerSecond_s = toStringValue< unsigned int >(observation->getNrSamplesPerSecond());
 	string nrPaddedDMs_s = toStringValue< unsigned int >(observation->getNrPaddedDMs());
 
 	delete this->code;
 	this->code = new string();
 	*(this->code) = "__kernel void " + this->name + "(__global const " + this->dataType + " * const restrict input, __global " + this->dataType + " * const restrict output) {\n"
-	"unsigned int baseDM = get_group_id(0) * " + nrThreadsPerBlock_s + ";\n"
-	"unsigned int baseSample = (get_group_id(1) * " + nrThreadsPerBlock_s + ") + get_local_id(0);\n"
+	"const unsigned int baseDM = get_group_id(0) * " + nrThreadsPerBlock_s + ";\n"
+	"const unsigned int baseSample = get_group_id(1) * " + nrThreadsPerBlock_s + ";\n"
 	"__local "+ this->dataType + " tempStorage[" + localElements_s + "];"
 	"\n"
-	"for ( unsigned int DM = baseDM; DM < baseDM + " + nrThreadsPerBlock_s + "; DM++ ) {\n"
-	"for ( unsigned int sample = baseSample; sample < baseSample + " + nrThreadsPerBlock_s + "; sample += " + nrThreadsPerBlock_s + " ) {\n"
-	"tempStorage[((DM - baseDM) * " + nrThreadsPerBlock_s + ") + ( sample - baseSample)] = input[(DM * " + nrSamplesPerPaddedSecond_s + ") + sample];\n"
+	"for ( unsigned int DM = 0; DM < " + nrThreadsPerBlock_s + "; DM++ ) {\n"
+	"if ( baseSample + get_local_id(0) < " + nrSamplesPerSecond_s + " ) {\n"
+	"tempStorage[(DM * " + nrThreadsPerBlock_s + ") + get_local_id(0)] = input[((baseDM + DM) * " + nrSamplesPerPaddedSecond_s + ") + (baseSample + get_local_id(0))];\n"
 	"}\n"
 	"}\n"
 	"barrier(CLK_LOCAL_MEM_FENCE);\n"
-	"baseSample = (get_group_id(1) * " + nrThreadsPerBlock_s + ");\n"
-	"baseDM = get_group_id(0) * " + nrThreadsPerBlock_s + " + get_local_id(0);\n"
-	"for ( unsigned int sample = baseSample; sample < baseSample + " + nrThreadsPerBlock_s + "; sample++ ) {\n"
-	"for ( unsigned int DM = baseDM; DM < baseDM + " + nrThreadsPerBlock_s + "; DM += " + nrThreadsPerBlock_s + " ) {\n"
-	"output[(sample * " + nrPaddedDMs_s + ") + DM] = tempStorage[((DM - baseDM) * " + nrThreadsPerBlock_s + ") + ( sample - baseSample)];"
+	"for ( unsigned int sample = 0; sample < " + nrThreadsPerBlock_s + "; sample++ ) {\n"
+	"if ( baseSample + sample < " + nrSamplesPerSecond_s + " ) {\n"
+	"output[((baseSample + sample) * " + nrPaddedDMs_s + ") + (baseDM + get_local_id(0))] = tempStorage[(get_local_id(0) * " + nrThreadsPerBlock_s + ") + sample];"
 	"}\n"
 	"}\n"
 	"}\n";
