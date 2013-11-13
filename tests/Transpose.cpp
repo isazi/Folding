@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
 		Transpose< dataType > clTranspose("clTranspose", typeName);
 		clTranspose.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
 		clTranspose.setObservation(&observation);
-		clTranspose.setNrThreadsPerBlock(512);
+		clTranspose.setNrThreadsPerBlock(32);
 		clTranspose.setNrDMsPerBlock(32);
 		clTranspose.setNrSamplesPerBlock(32);
 		clTranspose.generateCode();
