@@ -154,7 +154,7 @@ int main(int argc, char * argv[]) {
 			}
 			Vcur = sqrt(Vcur / nrIterations);
 
-			cout << observation.getNrDMs() << " " << observation.getNrSamplesPerSecond() << " " << *parameters << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clTranspose.getTimer().getAverageTime() << " " << clTranspose.getTimer().getStdDev() << endl;
+			cout << observation.getNrDMs() << " " << observation.getNrSamplesPerSecond() << " " << *configuration << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clTranspose.getTimer().getAverageTime() << " " << clTranspose.getTimer().getStdDev() << endl;
 		} catch ( OpenCLError err ) {
 			cerr << err.what() << endl;
 			continue;
