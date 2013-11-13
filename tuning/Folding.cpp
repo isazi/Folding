@@ -55,8 +55,8 @@ typedef float dataType;
 const string typeName("float");
 const unsigned int maxThreadsPerBlock = 1024;
 const unsigned int maxThreadsMultiplier = 512;
-const unsigned int maxItemsPerThread = 256;
-const unsigned int maxItemsMultiplier = 256;
+const unsigned int maxItemsPerThread = 16;
+const unsigned int maxItemsMultiplier = 16;
 const unsigned int padding = 32;
 
 
