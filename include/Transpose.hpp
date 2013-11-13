@@ -84,6 +84,7 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"tempStorage[((DM - baseDM) * " + nrSamplesPerBlock_s + ") + ( sample - baseSample)] = input[(DM * " + nrSamplesPerPaddedSecond_s + ") + sample];\n"
 	"}\n"
 	"}\n"
+	"barrier(CLK_LOCAL_MEM_FENCE);\n"
 	"baseSample = (get_group_id(1) * " + nrSamplesPerBlock_s + ");\n"
 	"baseDM = get_group_id(0) * " + nrDMsPerBlock_s + " + get_local_id(0);\n"
 	"for ( unsigned int sample = baseSample; sample < baseSample + " + nrSamplesPerBlock_s + "; sample++ ) {\n"

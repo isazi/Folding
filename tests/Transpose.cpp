@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
 	// Check
 	for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
 		for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
-			if ( !same(dedispersedData->getDataItemAt((DM * observation.getNrSamplesPerPaddedSecond()) + sample), transposeData->getDataItemAt((sample * observation.getNrPaddedDMs()) + DM)) ) {
+			if ( !same(dedispersedData->getHostDataItem((DM * observation.getNrSamplesPerPaddedSecond()) + sample), transposeData->getHostDataItem((sample * observation.getNrPaddedDMs()) + DM)) ) {
 				wrongValues++;
 			}
 		}
