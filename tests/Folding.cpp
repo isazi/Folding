@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
 	observation.setNrSamplesPerSecond(nrSamplesPerSecond);
 	observation.setNrDMs(nrDMs);
 	observation.setNrPeriods(nrPeriods);
+	observation.setBasePeriod(nrBins);
 	observation.setFirstPeriod(nrBins);
 	observation.setPeriodStep(nrBins);
 	observation.setNrBins(nrBins);

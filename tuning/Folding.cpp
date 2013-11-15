@@ -89,6 +89,7 @@ int main(int argc, char * argv[]) {
 
 	// Setup of the observation
 	observation.setPadding(padding);
+	observation.setBasePeriod(observation.getNrBins());
 	observation.setFirstPeriod(observation.getNrBins());
 	observation.setPeriodStep(observation.getNrBins());
 	
