@@ -74,13 +74,15 @@ template< typename T > void folding(const unsigned int second, const Observation
 template< typename T > void folding(const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters) {
 	#pragma omp parallel for schedule(static)
 	for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex++ ) {
-		unsigned int periodValue = observation.getFirstPeriod() + (periodIndex * observation.getPeriodStep());
+		const unsigned int periodValue = observation.getFirstPeriod() + (periodIndex * observation.getPeriodStep());
+		const unsigned int samplesPerBin = periodValue / observation.getBasePeriod();
+
 
 		#pragma omp parallel for schedule(static)
 		for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
 			for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
 				const unsigned int pCounter = counters[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm];
-				unsigned int sample = (bin * periodIndex) + bin + ((pCounter / (periodIndex + 1)) * periodValue) + (pCounter % (periodIndex + 1));
+				unsigned int sample = (bin * periodIndex) + bin + ((pCounter / samplesPerBin) * periodValue) + (pCounter % samplesPerBin);
 				T foldedSample = 0;
 				unsigned int foldedCounter = 0;
 
@@ -93,7 +95,7 @@ template< typename T > void folding(const Observation< T > & observation, const 
 					foldedSample += samples[(sample * observation.getNrPaddedDMs()) + dm];
 					foldedCounter++;
 
-					if ( (foldedCounter + pCounter) % (periodIndex + 1) == 0 ) {
+					if ( (foldedCounter + pCounter) % samplesPerBin == 0 ) {
 						sample += periodValue;
 					} else {
 						sample++;

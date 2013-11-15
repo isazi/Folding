@@ -90,6 +90,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	string nrPaddedDMs_s  = toStringValue< unsigned int >(observation->getNrPaddedDMs());
 	string nrPeriods_s = toStringValue< unsigned int >(observation->getNrPeriods());
 	string firstPeriod_s = toStringValue< unsigned int >(observation->getFirstPeriod());
+	string basePeriod_s = toStringValue< unsigned int >(observation->getBasePeriod());
 	string periodStep_s = toStringValue< unsigned int >(observation->getPeriodStep());
 	string nrBins_s = toStringValue< unsigned int >(observation->getNrBins());
 	string nrDMsPerBlock_s = toStringValue< unsigned int >(nrDMsPerBlock);
@@ -115,7 +116,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 
 	string defsPeriodTemplate = "const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + nrPeriodsPerBlock_s + " * " + nrPeriodsPerThread_s+  ") + get_local_id(1) + (<%PERIOD_NUM%> * " + nrPeriodsPerBlock_s + ");\n"
 		"const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n"
-		"const unsigned int samplesPerBin<%PERIOD_NUM%> = period<%PERIOD_NUM%>Value / " + firstPeriod_s + ";\n";
+		"const unsigned int samplesPerBin<%PERIOD_NUM%> = period<%PERIOD_NUM%>Value / " + basePeriod_s + ";\n";
 
 	string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
 
