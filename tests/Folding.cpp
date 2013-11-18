@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
 		foldedData->copyHostToDevice();
 		counterData->allocateDeviceData();
 		counterData->copyHostToDevice();
-		NrSamplesPerBin->allocateDeviceData();
+		nrSamplesPerBin->allocateDeviceData();
 		nrSamplesPerBin->copyHostToDevice();
 	} catch ( OpenCLError err ) {
 		cerr << err.what() << endl;
