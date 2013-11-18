@@ -42,7 +42,7 @@ template< typename T > vector< unsigned int > * getNrSamplesPerBin(Observation< 
 			samplesPerBin->at((period * obs.getNrPaddedBins()) + bin) = periodValue / obs.getBasePeriod();
 		}
 		for ( unsigned int bin = 0; bin < periodValue % obs.getBasePeriod(); bin++ ) {
-			samplesPerBin->at([)(period * obs.getNrPaddedBins()) + bin) += 1;
+			samplesPerBin->at((period * obs.getNrPaddedBins()) + bin) += 1;
 		}
 	}
 
