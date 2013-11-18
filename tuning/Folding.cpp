@@ -37,19 +37,21 @@ using std::setprecision;
 using std::numeric_limits;
 
 #include <ArgumentList.hpp>
-#include <Observation.hpp>
-#include <InitializeOpenCL.hpp>
-#include <CLData.hpp>
-#include <utils.hpp>
-#include <Folding.hpp>
-#include <Timer.hpp>
 using isa::utils::ArgumentList;
-using isa::utils::toStringValue;
-using isa::utils::Timer;
+#include <Observation.hpp>
 using AstroData::Observation;
+#include <InitializeOpenCL.hpp>
 using isa::OpenCL::initializeOpenCL;
+#include <CLData.hpp>
 using isa::OpenCL::CLData;
+#include <utils.hpp>
+using isa::utils::toStringValue;
+#include <Folding.hpp>
 using PulsarSearch::Folding;
+#include <Timer.hpp>
+using isa::utils::Timer;
+#include <Bins.hpp>
+using PulsarSearch::getNrSamplesPerBin;
 
 typedef float dataType;
 const string typeName("float");
@@ -69,6 +71,7 @@ int main(int argc, char * argv[]) {
 	CLData< dataType > * dedispersedData = new CLData< dataType >("DedispersedData", true);
 	CLData< dataType > * foldedData = new CLData<dataType >("FoldedData", true);
 	CLData< unsigned int > * counterData = new CLData< unsigned int >("CounterData", true);
+	CLData< unsigned int > * nrSamplesPerBin = new CLData< unsigned int >("SamplesPerBin");
 
 
 	try {
@@ -110,6 +113,8 @@ int main(int argc, char * argv[]) {
 	foldedData->blankHostData();
 	counterData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
 	counterData->blankHostData();
+	vector< unsigned int > * nrSamplesPerBinData = getNrSamplesPerBin(observation);
+	nrSamplesPerBin->allocateHostData(*nrSamplesPerBinData);
 
 	dedispersedData->setCLContext(clContext);
 	dedispersedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
@@ -117,6 +122,8 @@ int main(int argc, char * argv[]) {
 	foldedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 	counterData->setCLContext(clContext);
 	counterData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
+	nrSamplesPerBin->setCLContext(clContext);
+	nrSamplesPerBin->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 
 	try {
 		dedispersedData->allocateDeviceData();
@@ -125,6 +132,8 @@ int main(int argc, char * argv[]) {
 		foldedData->copyHostToDevice();
 		counterData->allocateDeviceData();
 		counterData->copyHostToDevice();
+		nrSamplesPerBin->allocateDeviceData();
+		nrSamplesPerBin->copyHostToDevice();
 	} catch ( OpenCLError err ) {
 		cerr << err.what() << endl;
 	}
@@ -197,6 +206,7 @@ int main(int argc, char * argv[]) {
 			Folding< dataType > clFold("clFold", typeName);
 			clFold.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
 			clFold.setObservation(&observation);
+			clFold.setNrSamplesPerBin(nrSamplesPerBin);
 			clFold.setNrDMsPerBlock((*parameters)[0]);
 			clFold.setNrPeriodsPerBlock((*parameters)[1]);
 			clFold.setNrBinsPerBlock((*parameters)[2]);
