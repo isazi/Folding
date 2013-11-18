@@ -66,6 +66,7 @@ public:
 	inline void setNrBinsPerThread(unsigned int bins);
 
 	inline void setObservation(Observation< T > * obs);
+	inline void setNrSamplesPerBin(CLData< unsigned int > * samplesPerBin);
 
 private:
 	unsigned int nrDMsPerBlock;
@@ -78,11 +79,12 @@ private:
 	cl::NDRange localSize;
 
 	Observation< T > * observation;
+	CLData< unsigned int > * nrSamplesPerBin;
 };
 
 
 // Implementation
-template< typename T > Folding< T >::Folding(string name, string dataType) : Kernel< T >(name, dataType), nrDMsPerBlock(0), nrPeriodsPerBlock(0), nrBinsPerBlock(0), nrDMsPerThread(0), nrPeriodsPerThread(0), nrBinsPerThread(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0) {}
+template< typename T > Folding< T >::Folding(string name, string dataType) : Kernel< T >(name, dataType), nrDMsPerBlock(0), nrPeriodsPerBlock(0), nrBinsPerBlock(0), nrDMsPerThread(0), nrPeriodsPerThread(0), nrBinsPerThread(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0), nrSamplesPerBin(0) {}
 
 template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	// Begin kernel's template
@@ -93,6 +95,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	string basePeriod_s = toStringValue< unsigned int >(observation->getBasePeriod());
 	string periodStep_s = toStringValue< unsigned int >(observation->getPeriodStep());
 	string nrBins_s = toStringValue< unsigned int >(observation->getNrBins());
+	string nrPaddedBins_s = toStringValue< unsigned int >(observation->getNrPaddedBins());
 	string nrDMsPerBlock_s = toStringValue< unsigned int >(nrDMsPerBlock);
 	string nrDMsPerThread_s = toStringValue< unsigned int >(nrDMsPerThread);
 	string nrPeriodsPerBlock_s = toStringValue< unsigned int >(nrPeriodsPerBlock);
@@ -102,7 +105,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 
 	delete this->code;
 	this->code = new string();
-	*(this->code) = "__kernel void " + this->name + "(__global const " + this->dataType + " * const restrict samples, __global " + this->dataType + " * const restrict bins, __global unsigned int * const restrict counters) {\n"
+	*(this->code) = "__kernel void " + this->name + "(__global const " + this->dataType + " * const restrict samples, __global " + this->dataType + " * const restrict bins, __global unsigned int * const restrict counters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
 	"<%DEFS%>"
 	"<%LOADS%>"
 	"\n"
@@ -115,10 +118,11 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	string defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
 
 	string defsPeriodTemplate = "const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + nrPeriodsPerBlock_s + " * " + nrPeriodsPerThread_s+  ") + get_local_id(1) + (<%PERIOD_NUM%> * " + nrPeriodsPerBlock_s + ");\n"
-		"const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n"
-		"const unsigned int samplesPerBin<%PERIOD_NUM%> = period<%PERIOD_NUM%>Value / " + basePeriod_s + ";\n";
+		"const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n";
 
 	string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
+
+	string samplesPerBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>];\n";
 
 	string defsTemplate = "unsigned int foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
 		+ this->dataType + " foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
@@ -126,7 +130,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 		
 	string loadsTemplate = "pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = counters[(bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
 
-	string computeTemplate = "sample = (bin<%BIN_NUM%> * period<%PERIOD_NUM%>) + bin<%BIN_NUM%> + ((pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBin<%PERIOD_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBin<%PERIOD_NUM%>);\n"
+	string computeTemplate = "sample = (bin<%BIN_NUM%> * period<%PERIOD_NUM%>) + bin<%BIN_NUM%> + ((pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
 	"if ( (sample % "+ nrSamplesPerSecond_s + ") == 0 ) {\n"
 	"sample = 0;\n"
 	"} else {\n"
@@ -135,7 +139,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	"while ( sample < " + nrSamplesPerSecond_s + " ) {\n"
 	"foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n"
 	"foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
-	"if ( ((foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBin<%PERIOD_NUM%>) == 0 ) {\n"
+	"if ( ((foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) == 0 ) {\n"
 	"sample += period<%PERIOD_NUM%>Value;\n"
 	"} else {\n"
 	"sample++;\n"
@@ -185,6 +189,23 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 		delete temp;
 
 		delete bin_s;
+	}
+	for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
+		string * period_s = toString< unsigned int >(period);
+
+		for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
+			string * bin_s = toString< unsigned int >(bin);
+			string * temp = 0;
+
+			temp = replace(&samplesPerBinTemplate, "<%BIN_NUM%>", *bin_s);
+			temp = replace(temp, "<%PERIOD_NUM%>", *period_s, true);
+			defs->append(*temp);
+			delete temp;
+
+			delete bin_s;
+		}
+
+		delete period_s;
 	}
 	for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
 		string * bin_s = toString< unsigned int >(bin);
@@ -266,6 +287,7 @@ template< typename T > void Folding< T >::operator()(CLData< T > * input, CLData
 	this->setArgument(0, *(input->getDeviceData()));
 	this->setArgument(1, *(output->getDeviceData()));
 	this->setArgument(2, *(counters->getDeviceData()));
+	this->setArgument(3, *(nrSamplesPerBin->getDeviceData()));
 
 	this->run(globalSize, localSize);
 }
@@ -296,6 +318,10 @@ template< typename T > inline void Folding< T >::setNrBinsPerThread(unsigned int
 
 template< typename T > inline void Folding< T >::setObservation(Observation< T > * obs) {
 	observation = obs;
+}
+
+template< typename T > inline void Folding< T >::setNrSamplesPerBin(CLData< unsigned int > * samplesPerBin) {
+	nrSamplesPerBin = samplesPerBin;
 }
 
 } // PulsarSearch
