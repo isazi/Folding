@@ -29,10 +29,10 @@ using AstroData::Observation;
 
 namespace PulsarSearch {
 
-template< typename T > vector< unsigned int > * getNrSamplesPerBin(Observation< T > & obs);
+template< typename T > vector< unsigned int > * getNrSamplesPerBin(const Observation< T > & obs);
 
 // Implementation
-template< typename T > vector< unsigned int > * getNrSamplesPerBin(Observation< T > & obs) {
+template< typename T > vector< unsigned int > * getNrSamplesPerBin(const Observation< T > & obs) {
 	vector< unsigned int > * samplesPerBin = new vector< unsigned int >(obs.getNrPeriods() * obs.getNrPaddedBins());
 
 	for ( unsigned int period = 0; period < obs.getNrPeriods(); period++ ) {
