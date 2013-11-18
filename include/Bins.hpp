@@ -17,6 +17,9 @@
  *
  */
 
+#include <vector>
+using std::vector;
+
 #include <Observation.hpp>
 using AstroData::Observation;
 
@@ -26,20 +29,20 @@ using AstroData::Observation;
 
 namespace PulsarSearch {
 
-template< typename T > unsigned int * getNrSamplesPerBin(Observation< T > & obs);
+template< typename T > vector< unsigned int > * getNrSamplesPerBin(Observation< T > & obs);
 
 // Implementation
-template< typename T > unsigned int * getNrSamplesPerBin(Observation< T > & obs) {
-	unsigned int * samplesPerBin = new unsigned int [obs.getNrPeriods() * obs.getNrPaddedBins()];
+template< typename T > vector< unsigned int > * getNrSamplesPerBin(Observation< T > & obs) {
+	vector< unsigned int > * samplesPerBin = new vector< unsigned int >(obs.getNrPeriods() * obs.getNrPaddedBins());
 
 	for ( unsigned int period = 0; period < obs.getNrPeriods(); period++ ) {
 		unsigned int periodValue = obs.getFirstPeriod() + (period * obs.getPeriodStep());
 
 		for ( unsigned int bin = 0; bin < obs.getNrBins(); bin++ ) {
-			samplesPerBin[(period * obs.getNrPaddedBins()) + bin] = periodValue / obs.getBasePeriod();
+			samplesPerBin->at((period * obs.getNrPaddedBins()) + bin) = periodValue / obs.getBasePeriod();
 		}
 		for ( unsigned int bin = 0; bin < periodValue % obs.getBasePeriod(); bin++ ) {
-			samplesPerBin[(period * obs.getNrPaddedBins()) + bin] += 1;
+			samplesPerBin->at([)(period * obs.getNrPaddedBins()) + bin) += 1;
 		}
 	}
 
