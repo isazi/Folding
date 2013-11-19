@@ -83,6 +83,9 @@ int main(int argc, char * argv[]) {
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
 		lowerNrThreads = args.getSwitchArgument< unsigned int >("-lnt");
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
+		observation.setBasePeriod(args.getSwitchArgument< unsigned int >("-base_period"));
+		observation.setFirstPeriod(args.getSwitchArgument< unsigned int >("-first_period"));
+		observation.setPeriodStep(args.getSwitchArgument< unsigned int >("-period_step"));
 		observation.setNrBins(args.getSwitchArgument< unsigned int >("-bins"));
 		observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 	} catch ( exception & err ) {
@@ -92,9 +95,6 @@ int main(int argc, char * argv[]) {
 
 	// Setup of the observation
 	observation.setPadding(padding);
-	observation.setBasePeriod(observation.getNrBins());
-	observation.setFirstPeriod(observation.getNrBins());
-	observation.setPeriodStep(observation.getNrBins());
 	
 	cl::Context * clContext = new cl::Context();
 	vector< cl::Platform > * clPlatforms = new vector< cl::Platform >();
