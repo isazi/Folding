@@ -92,7 +92,6 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	string nrPaddedDMs_s  = toStringValue< unsigned int >(observation->getNrPaddedDMs());
 	string nrPeriods_s = toStringValue< unsigned int >(observation->getNrPeriods());
 	string firstPeriod_s = toStringValue< unsigned int >(observation->getFirstPeriod());
-	string basePeriod_s = toStringValue< unsigned int >(observation->getBasePeriod());
 	string periodStep_s = toStringValue< unsigned int >(observation->getPeriodStep());
 	string nrBins_s = toStringValue< unsigned int >(observation->getNrBins());
 	string nrPaddedBins_s = toStringValue< unsigned int >(observation->getNrPaddedBins());
