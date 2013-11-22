@@ -52,15 +52,15 @@ template< typename T > void folding(const unsigned int second, const Observation
 
 		for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
 			const unsigned int pCounter = counters[(periodIndex * observation.getNrPaddedBins()) + bin];
-			unsigned int sample = samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2) + 1) + ((pCounter / samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2))) * periodValue) + (pCounter % samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)));
-
-			if ( (sample / observation.getNrSamplesPerSecond()) == second ) {
-				sample %= observation.getNrSamplesPerSecond();
-			}
+			
 			for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
 				T foldedSample = 0;
 				unsigned int foldedCounter = 0;
-				
+				unsigned int sample = samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2) + 1) + ((pCounter / samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2))) * periodValue) + (pCounter % samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)));
+
+				if ( (sample / observation.getNrSamplesPerSecond()) == second ) {
+					sample %= observation.getNrSamplesPerSecond();
+				}	
 				while ( sample < observation.getNrSamplesPerSecond() ) {
 					foldedSample += samples[(sample * observation.getNrPaddedDMs()) + dm];
 					foldedCounter++;
