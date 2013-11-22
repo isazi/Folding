@@ -80,7 +80,7 @@ template< typename T > void folding(const unsigned int second, const Observation
 
 					foldedSample /= foldedCounter;
 					bins[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm] = (addedFraction * foldedSample) + ((1.0f - addedFraction) * pValue);
-					if ( dm == observation.getNrDMs - 1 ) {
+					if ( dm == observation.getNrDMs() - 1 ) {
 						counters[(periodIndex * observation.getNrPaddedBins()) + bin] = pCounter + foldedCounter;
 					}
 				}
