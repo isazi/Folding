@@ -41,39 +41,10 @@ namespace PulsarSearch {
 
 // OpenMP folding algorithm
 template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters);
-template< typename T > void folding(const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters);
 
 
 // Implementation
 template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters) {
-	for ( unsigned int globalSample = 0; globalSample < observation.getNrSamplesPerSecond(); globalSample++ ) {
-		const unsigned int sample = ( second * observation.getNrSamplesPerSecond() ) + globalSample;
-
-		#pragma omp parallel for schedule(static)
-		for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex++ ) {
-			const unsigned int periodValue = observation.getNrBins() * (periodIndex + 1);
-			const float phase = ( sample / static_cast< float >(periodValue) ) - ( sample / periodValue );
-			const unsigned int bin = static_cast< unsigned int >(phase * static_cast< float >(observation.getNrBins()));
-			
-			#pragma omp parallel for schedule(static)
-			for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
-				const unsigned int globalItem = (bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm;
-				T cValue = samples[(globalSample * observation.getNrPaddedDMs()) + dm];
-				const unsigned int pCounter = counters[globalItem];
-				const T pValue = bins[globalItem];
-				unsigned int cCounter = pCounter + 1;
-
-				if ( pCounter != 0 ) {
-					cValue = pValue + ( ( cValue - pValue ) / cCounter );
-				}
-				bins[globalItem] = cValue;
-				counters[globalItem] = cCounter;
-			}
-		}
-	}
-}
-
-template< typename T > void folding(const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters) {
 	vector< unsigned int > * samplesPerBin = getNrSamplesPerBin(observation);
 
 	#pragma omp parallel for schedule(static)
@@ -82,22 +53,21 @@ template< typename T > void folding(const Observation< T > & observation, const 
 
 		#pragma omp parallel for schedule(static)
 		for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
+			const unsigned int pCounter = counters[(periodIndex * observation.getNrPaddedBins()) + bin];
+			unsigned int sample = samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2) + 1) + ((pCounter / samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2))) * periodValue) + (pCounter % samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)));
+
+			if ( (sample / observation.getNrSamplesPerSecond()) == second ) {
+				sample %= observation.getNrSamplesPerSecond();
+			}
 			for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
-				const unsigned int pCounter = counters[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm];
-				unsigned int sample = (bin * periodIndex) + bin + ((pCounter / samplesPerBin->at((periodIndex * observation.getNrPaddedBins()) + bin)) * periodValue) + (pCounter % samplesPerBin->at((periodIndex * observation.getNrPaddedBins()) + bin));
 				T foldedSample = 0;
 				unsigned int foldedCounter = 0;
-
-				if ( (sample % observation.getNrSamplesPerSecond()) == 0 ) {
-					sample = 0;
-				} else {
-					sample = (sample % observation.getNrSamplesPerSecond()) - (sample / observation.getNrSamplesPerSecond());
-				}
+				
 				while ( sample < observation.getNrSamplesPerSecond() ) {
 					foldedSample += samples[(sample * observation.getNrPaddedDMs()) + dm];
 					foldedCounter++;
 
-					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * observation.getNrPaddedBins()) + bin) == 0 ) {
+					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)) == 0 ) {
 						sample += periodValue;
 					} else {
 						sample++;
@@ -109,8 +79,10 @@ template< typename T > void folding(const Observation< T > & observation, const 
 					float addedFraction = static_cast< float >(foldedCounter) / (foldedCounter + pCounter);
 
 					foldedSample /= foldedCounter;
-					counters[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm] = pCounter + foldedCounter;
 					bins[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm] = (addedFraction * foldedSample) + ((1.0f - addedFraction) * pValue);
+					if ( dm == observation.getNrDMs - 1 ) {
+						counters[(periodIndex * observation.getNrPaddedBins()) + bin] = pCounter + foldedCounter;
+					}
 				}
 			}
 		}
