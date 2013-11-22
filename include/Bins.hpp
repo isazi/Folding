@@ -39,13 +39,13 @@ template< typename T > vector< unsigned int > * getNrSamplesPerBin(const Observa
 		unsigned int offset = 0;
 		unsigned int periodValue = obs.getFirstPeriod() + (period * obs.getPeriodStep());
 
-		for ( unsigned int bin = 0; bin < obs.getNrBins(); bin += 2 ) {
-			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + bin) = periodValue / obs.getNrBins();
+		for ( unsigned int bin = 0; bin < obs.getNrBins(); bin++ ) {
+			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2)) = periodValue / obs.getNrBins();
 			if ( bin < periodValue % obs.getNrBins() ) {
-				samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + bin) += 1;
+				samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2)) += 1;
 			}
-			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + bin + 1) = offset;
-			offset += samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + bin);
+			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2) + 1) = offset;
+			offset += samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2));
 		}
 	}
 
