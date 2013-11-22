@@ -70,8 +70,9 @@ int main(int argc, char * argv[]) {
 	Observation< dataType > observation("FoldingTuning", typeName);
 	CLData< dataType > * dedispersedData = new CLData< dataType >("DedispersedData", true);
 	CLData< dataType > * foldedData = new CLData<dataType >("FoldedData", true);
-	CLData< unsigned int > * counterData = new CLData< unsigned int >("CounterData", true);
-	CLData< unsigned int > * nrSamplesPerBin = new CLData< unsigned int >("SamplesPerBin");
+	CLData< unsigned int > * readCounterData = new CLData< unsigned int >("ReadCounterData", true);
+	CLData< unsigned int > * writeCounterData = new CLData< unsigned int >("WriteCounterData", true);
+	CLData< unsigned int > * nrSamplesPerBin = new CLData< unsigned int >("SamplesPerBin", true);
 
 
 	try {
@@ -110,8 +111,10 @@ int main(int argc, char * argv[]) {
 	dedispersedData->blankHostData();
 	foldedData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
 	foldedData->blankHostData();
-	counterData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
-	counterData->blankHostData();
+	readCounterData->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	readCounterData->blankHostData();
+	writeCounterData->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	writeCounterData->blankHostData();
 	vector< unsigned int > * nrSamplesPerBinData = getNrSamplesPerBin(observation);
 	nrSamplesPerBin->allocateHostData(*nrSamplesPerBinData);
 
@@ -119,8 +122,10 @@ int main(int argc, char * argv[]) {
 	dedispersedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 	foldedData->setCLContext(clContext);
 	foldedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
-	counterData->setCLContext(clContext);
-	counterData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
+	readCounterData->setCLContext(clContext);
+	readCounterData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
+	writeCounterData->setCLContext(clContext);
+	writeCounterData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 	nrSamplesPerBin->setCLContext(clContext);
 	nrSamplesPerBin->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 
@@ -129,8 +134,10 @@ int main(int argc, char * argv[]) {
 		dedispersedData->copyHostToDevice();
 		foldedData->allocateDeviceData();
 		foldedData->copyHostToDevice();
-		counterData->allocateDeviceData();
-		counterData->copyHostToDevice();
+		readCounterData->allocateDeviceData();
+		readCounterData->copyHostToDevice();
+		writeCounterData->allocateDeviceData();
+		writeCounterData->copyHostToDevice();
 		nrSamplesPerBin->allocateDeviceData();
 		nrSamplesPerBin->copyHostToDevice();
 	} catch ( OpenCLError err ) {
@@ -173,7 +180,7 @@ int main(int argc, char * argv[]) {
 						for ( unsigned int binsPerThread = 1; binsPerThread <= maxItemsMultiplier; binsPerThread++ ) {
 							if ( observation.getNrBins() % (binsPerBlock * binsPerThread) != 0 ) {
 								continue;
-							} else if ( (DMsPerThread + (2 * periodsPerThread) + binsPerThread) + (2 * periodsPerThread * binsPerThread) + (3 * DMsPerThread * periodsPerThread * binsPerThread) > maxItemsPerThread ) {
+							} else if ( (DMsPerThread + (2 * periodsPerThread) + binsPerThread) + (3 * periodsPerThread * binsPerThread) + (2 * DMsPerThread * periodsPerThread * binsPerThread) > maxItemsPerThread ) {
 								break;
 							}
 
@@ -215,14 +222,12 @@ int main(int argc, char * argv[]) {
 			clFold.generateCode();
 
 			foldedData->copyHostToDevice();
-			counterData->copyHostToDevice();
-			clFold(dedispersedData, foldedData, counterData);
+			clFold(0, dedispersedData, foldedData, readCounterData, writeCounterData);
 			(clFold.getTimer()).reset();
 			
 			for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
 				foldedData->copyHostToDevice();
-				counterData->copyHostToDevice();
-				clFold(dedispersedData, foldedData, counterData);
+				clFold(0, dedispersedData, foldedData, readCounterData, writeCounterData);
 				
 				if ( iteration == 0 ) {
 					Acur = clFold.getGFLOP() / clFold.getTimer().getLastRunTime();
