@@ -55,7 +55,7 @@ public:
 	Folding(string name, string dataType);
 	
 	void generateCode() throw (OpenCLError);
-	void operator()(CLData< T > * input, CLData< T > * output, CLData< unsigned int > * counters) throw (OpenCLError);
+	void operator()(unsigned int second, CLData< T > * input, CLData< T > * output, CLData< unsigned int > * readCounters, CLData< unsigned int > * writeCounters) throw (OpenCLError);
 
 	inline void setNrDMsPerBlock(unsigned int DMs);
 	inline void setNrPeriodsPerBlock(unsigned int periods);
@@ -104,9 +104,8 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 
 	delete this->code;
 	this->code = new string();
-	*(this->code) = "__kernel void " + this->name + "(__global const " + this->dataType + " * const restrict samples, __global " + this->dataType + " * const restrict bins, __global unsigned int * const restrict counters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
+	*(this->code) = "__kernel void " + this->name + "(const unsigned int second, __global const " + this->dataType + " * const restrict samples, __global " + this->dataType + " * const restrict bins, __global const unsigned int * const restrict readCounters, __global unsigned int * const restrict writeCounters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
 	"<%DEFS%>"
-	"<%LOADS%>"
 	"\n"
 	"unsigned int sample = 0;"
 	"<%COMPUTE%>"
@@ -121,24 +120,21 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 
 	string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
 
-	string samplesPerBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>];\n";
+	string samplesPerBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * 2 * " + nrPaddedBins_s + ") + (bin<%BIN_NUM%> * 2)];\n"
+		"const unsigned int offsetp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * 2 * " + nrPaddedBins_s + ") + (bin<%BIN_NUM%> * 2) + 1];\n"
+		"const unsigned int pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = readCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>];\n";
 
 	string defsTemplate = "unsigned int foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
-		+ this->dataType + " foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
-		"unsigned int pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
+		+ this->dataType + " foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
 		
-	string loadsTemplate = "pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = counters[(bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
-
-	string computeTemplate = "sample = (bin<%BIN_NUM%> * period<%PERIOD_NUM%>) + bin<%BIN_NUM%> + ((pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
-	"if ( (sample % "+ nrSamplesPerSecond_s + ") == 0 ) {\n"
-	"sample = 0;\n"
-	"} else {\n"
-	"sample = (sample % "+ nrSamplesPerSecond_s + ") - (sample / "+ nrSamplesPerSecond_s + ");\n"
+	string computeTemplate = "sample = offsetp<%PERIOD_NUM%>b<%BIN_NUM%> + ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
+	"if ( (sample / "+ nrSamplesPerSecond_s + ") == second ) {\n"
+	"sample %= "+ nrSamplesPerSecond_s + ";\n"
 	"}\n"
 	"while ( sample < " + nrSamplesPerSecond_s + " ) {\n"
 	"foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n"
 	"foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
-	"if ( ((foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) == 0 ) {\n"
+	"if ( ((foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) == 0 ) {\n"
 	"sample += period<%PERIOD_NUM%>Value;\n"
 	"} else {\n"
 	"sample++;\n"
@@ -148,15 +144,14 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	string storeTemplate = "if ( foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
 	"const unsigned int outputItem = (bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
 	"const "+ this->dataType + " pValue = bins[outputItem];\n"
-	"float addedFraction = convert_float(foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) / (foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
+	"float addedFraction = convert_float(foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) / (foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
 	"foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> /= foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
-	"counters[outputItem] = pCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
+	"writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
 	"bins[outputItem] = (addedFraction * foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) + ((1.0f - addedFraction) * pValue);\n"
 	"}\n";
 	// End kernel's template
 
 	string * defs = new string();
-	string * loads = new string();
 	string * computes = new string();
 	string * stores = new string();
 	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
@@ -222,12 +217,6 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 				defs->append(*temp);
 				delete temp;
 
-				temp = replace(&loadsTemplate, "<%BIN_NUM%>", *bin_s);
-				temp = replace(temp, "<%PERIOD_NUM%>", *period_s, true);
-				temp = replace(temp, "<%DM_NUM%>", *DM_s, true);
-				loads->append(*temp);
-				delete temp;
-
 				temp = replace(&storeTemplate, "<%BIN_NUM%>", *bin_s);
 				temp = replace(temp, "<%PERIOD_NUM%>", *period_s, true);
 				temp = replace(temp, "<%DM_NUM%>", *DM_s, true);
@@ -267,7 +256,6 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 		delete DM_s;
 	}
 	this->code = replace(this->code, "<%DEFS%>", *defs, true);
-	this->code = replace(this->code, "<%LOADS%>", *loads, true);
 	this->code = replace(this->code, "<%COMPUTE%>", *computes, true);
 	this->code = replace(this->code, "<%STORE%>", *stores, true);
 	delete defs;
@@ -282,11 +270,13 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	this->compile();
 }
 
-template< typename T > void Folding< T >::operator()(CLData< T > * input, CLData< T > * output, CLData< unsigned int > * counters) throw (OpenCLError) {
-	this->setArgument(0, *(input->getDeviceData()));
-	this->setArgument(1, *(output->getDeviceData()));
-	this->setArgument(2, *(counters->getDeviceData()));
-	this->setArgument(3, *(nrSamplesPerBin->getDeviceData()));
+template< typename T > void Folding< T >::operator()(unsigned int second, CLData< T > * input, CLData< T > * output, CLData< unsigned int > * readCounters, CLData< unsigned int > * writeCounters) throw (OpenCLError) {
+	this->setArgument(0, second);
+	this->setArgument(1, *(input->getDeviceData()));
+	this->setArgument(2, *(output->getDeviceData()));
+	this->setArgument(3, *(readCounters->getDeviceData()));
+	this->setArgument(3, *(writeCounters->getDeviceData()));
+	this->setArgument(5, *(nrSamplesPerBin->getDeviceData()));
 
 	this->run(globalSize, localSize);
 }
