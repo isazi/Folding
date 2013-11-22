@@ -275,7 +275,7 @@ template< typename T > void Folding< T >::operator()(unsigned int second, CLData
 	this->setArgument(1, *(input->getDeviceData()));
 	this->setArgument(2, *(output->getDeviceData()));
 	this->setArgument(3, *(readCounters->getDeviceData()));
-	this->setArgument(3, *(writeCounters->getDeviceData()));
+	this->setArgument(4, *(writeCounters->getDeviceData()));
 	this->setArgument(5, *(nrSamplesPerBin->getDeviceData()));
 
 	this->run(globalSize, localSize);
