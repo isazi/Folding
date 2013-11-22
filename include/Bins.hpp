@@ -33,16 +33,19 @@ template< typename T > vector< unsigned int > * getNrSamplesPerBin(const Observa
 
 // Implementation
 template< typename T > vector< unsigned int > * getNrSamplesPerBin(const Observation< T > & obs) {
-	vector< unsigned int > * samplesPerBin = new vector< unsigned int >(obs.getNrPeriods() * obs.getNrPaddedBins());
+	vector< unsigned int > * samplesPerBin = new vector< unsigned int >(obs.getNrPeriods() * 2 * obs.getNrPaddedBins());
 
 	for ( unsigned int period = 0; period < obs.getNrPeriods(); period++ ) {
+		unsigned int offset = 0;
 		unsigned int periodValue = obs.getFirstPeriod() + (period * obs.getPeriodStep());
 
-		for ( unsigned int bin = 0; bin < obs.getNrBins(); bin++ ) {
-			samplesPerBin->at((period * obs.getNrPaddedBins()) + bin) = periodValue / obs.getBasePeriod();
-		}
-		for ( unsigned int bin = 0; bin < periodValue % obs.getBasePeriod(); bin++ ) {
-			samplesPerBin->at((period * obs.getNrPaddedBins()) + bin) += 1;
+		for ( unsigned int bin = 0; bin < obs.getNrBins(); bin += 2 ) {
+			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + bin) = periodValue / obs.getNrBins();
+			if ( bin < periodValue % obs.getNrBins() ) {
+				samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + bin) += 1;
+			}
+			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + bin + 1) = offset;
+			offset += samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + bin);
 		}
 	}
 
