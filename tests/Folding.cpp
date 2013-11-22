@@ -67,6 +67,7 @@ const unsigned int nrDMs = 256;
 // Periods
 const unsigned int nrPeriods = 128;
 const unsigned int nrBins = 256;
+const unsigned int periodStep = 64;
 
 
 int main(int argc, char *argv[]) {
@@ -76,8 +77,9 @@ int main(int argc, char *argv[]) {
 	Observation< dataType > observation("FoldingTest", typeName);
 	CLData< dataType > * dedispersedData = new CLData< dataType >("DedispersedData", true);
 	CLData< dataType > * foldedData = new CLData<dataType >("FoldedData", true);
-	CLData< unsigned int > * counterData = new CLData< unsigned int >("CounterData", true);
-	CLData< unsigned int > * nrSamplesPerBin = new CLData< unsigned int >("NrSamplesPerBin");
+	CLData< unsigned int > * readCounterData = new CLData< unsigned int >("ReadCounterData", true);
+	CLData< unsigned int > * writeCounterData = new CLData< unsigned int >("WriteCounterData", true);
+	CLData< unsigned int > * nrSamplesPerBin = new CLData< unsigned int >("NrSamplesPerBin", true);
 
 	try {
 		ArgumentList args(argc, argv);
@@ -95,9 +97,8 @@ int main(int argc, char *argv[]) {
 	observation.setNrSamplesPerSecond(nrSamplesPerSecond);
 	observation.setNrDMs(nrDMs);
 	observation.setNrPeriods(nrPeriods);
-	observation.setBasePeriod(nrBins);
 	observation.setFirstPeriod(nrBins);
-	observation.setPeriodStep(nrBins);
+	observation.setPeriodStep(periodStep);
 	observation.setNrBins(nrBins);
 	
 	cl::Context * clContext = new cl::Context();
@@ -111,8 +112,10 @@ int main(int argc, char *argv[]) {
 	dedispersedData->allocateHostData(observation.getNrSamplesPerSecond() * observation.getNrPaddedDMs());
 	foldedData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
 	foldedData->blankHostData();
-	counterData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
-	counterData->blankHostData();
+	readCounterData->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	readCounterData->blankHostData();
+	writeCounterData->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	writeCounterData->blankHostData();
 	vector< unsigned int > * nrSamplesPerBinData = getNrSamplesPerBin(observation);
 	nrSamplesPerBin->allocateHostData(*nrSamplesPerBinData);
 
@@ -120,8 +123,10 @@ int main(int argc, char *argv[]) {
 	dedispersedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 	foldedData->setCLContext(clContext);
 	foldedData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
-	counterData->setCLContext(clContext);
-	counterData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
+	readCounterData->setCLContext(clContext);
+	readCounterData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
+	writeCounterData->setCLContext(clContext);
+	writeCounterData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 	nrSamplesPerBin->setCLContext(clContext);
 	nrSamplesPerBin->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 
@@ -129,8 +134,10 @@ int main(int argc, char *argv[]) {
 		dedispersedData->allocateDeviceData();
 		foldedData->allocateDeviceData();
 		foldedData->copyHostToDevice();
-		counterData->allocateDeviceData();
-		counterData->copyHostToDevice();
+		readCounterData->allocateDeviceData();
+		readCounterData->copyHostToDevice();
+		writeCounterData->allocateDeviceData();
+		writeCounterData->copyHostToDevice();
 		nrSamplesPerBin->allocateDeviceData();
 		nrSamplesPerBin->copyHostToDevice();
 	} catch ( OpenCLError err ) {
@@ -161,7 +168,7 @@ int main(int argc, char *argv[]) {
 		clFold.generateCode();
 
 		dedispersedData->copyHostToDevice();
-		clFold(dedispersedData, foldedData, counterData);
+		clFold(0, dedispersedData, foldedData, readCounterData, writeCounterData);
 		foldedData->copyDeviceToHost();
 	} catch ( OpenCLError err ) {
 		cerr << err.what() << endl;
@@ -172,8 +179,9 @@ int main(int argc, char *argv[]) {
 	CLData< dataType > * CPUFolded = new CLData<dataType >("CPUFolded", true);
 	CLData< unsigned int > * CPUCounter = new CLData< unsigned int >("CPUCounter", true);
 	CPUFolded->allocateHostData(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
-	CPUCounter->allocateHostData(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
-	folding(observation, dedispersedData->getHostData(), CPUFolded->getHostData(), CPUCounter->getHostData());
+	CPUCounter->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	CPUCounter->blankHostData();
+	folding(0, observation, dedispersedData->getHostData(), CPUFolded->getHostData(), CPUCounter->getHostData());
 	for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
 		long long unsigned int wrongValuesBin = 0;
 
