@@ -73,16 +73,25 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"const unsigned int baseDM = get_group_id(0) * " + nrThreadsPerBlock_s + ";\n"
 	"const unsigned int baseSample = get_group_id(1) * " + nrThreadsPerBlock_s + ";\n"
 	"__local "+ this->dataType + " tempStorage[" + localElements_s + "];"
+	"__local "+ this->dataType + " tempTranspose[" + localElements_s + "];"
 	"\n"
+	// Load input
 	"for ( unsigned int DM = 0; DM < " + nrThreadsPerBlock_s + "; DM++ ) {\n"
 	"if ( baseSample + get_local_id(0) < " + nrSamplesPerSecond_s + " ) {\n"
 	"tempStorage[(DM * " + nrThreadsPerBlock_s + ") + get_local_id(0)] = input[((baseDM + DM) * " + nrSamplesPerPaddedSecond_s + ") + (baseSample + get_local_id(0))];\n"
 	"}\n"
 	"}\n"
 	"barrier(CLK_LOCAL_MEM_FENCE);\n"
+	// Local transpose
+	"for ( unsigned int i = 1; i <= " + nrThreadsPerBlock_s + "; i++ ) {\n"
+	"unsigned int localItem = (get_local_id(0) + i) % " + nrThreadsPerBlock_s + ";\n"
+	"tempTranspose[(localItem * " + nrThreadsPerBlock_s + ") + (i - 1)] = tempStorage[((i - 1) * " + nrThreadsPerBlock_s + ") + localItem];\n"
+	"}\n"
+	"barrier(CLK_LOCAL_MEM_FENCE);\n"
+	// Store output
 	"for ( unsigned int sample = 0; sample < " + nrThreadsPerBlock_s + "; sample++ ) {\n"
 	"if ( baseSample + sample < " + nrSamplesPerSecond_s + " ) {\n"
-	"output[((baseSample + sample) * " + nrPaddedDMs_s + ") + (baseDM + get_local_id(0))] = tempStorage[(get_local_id(0) * " + nrThreadsPerBlock_s + ") + sample];"
+	"output[((baseSample + sample) * " + nrPaddedDMs_s + ") + (baseDM + get_local_id(0))] = tempTranspose[(sample * " + nrThreadsPerBlock_s + ") + get_local_id(0)];"
 	"}\n"
 	"}\n"
 	"}\n";
