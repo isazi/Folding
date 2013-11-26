@@ -129,6 +129,7 @@ int main(int argc, char *argv[]) {
 	writeCounterData->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
 	nrSamplesPerBin->setCLContext(clContext);
 	nrSamplesPerBin->setCLQueue(&((clQueues->at(clDeviceID)).at(0)));
+	nrSamplesPerBin->setDeviceReadOnly();
 
 	try {
 		dedispersedData->allocateDeviceData();
