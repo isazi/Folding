@@ -82,12 +82,14 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"}\n"
 	"barrier(CLK_LOCAL_MEM_FENCE);\n"
 	// Local in-place transpose
-	"for ( unsigned int i = 1; i <= " + nrThreadsPerBlock_s + "; i++ ) {\n"
+	"for ( unsigned int i = 1; i <= " + nrThreadsPerBlock_s + " / 2; i++ ) {\n"
 	"unsigned int localItem = (get_local_id(0) + i) % " + nrThreadsPerBlock_s + ";\n"
 	+ this->dataType + " temp = 0;\n"
-	"temp = tempStorage[(localItem * " + nrThreadsPerBlock_s + ") + (i - 1)];\n"
-	"tempStorage[(localItem * " + nrThreadsPerBlock_s + ") + (i - 1)] = tempStorage[((i - 1) * " + nrThreadsPerBlock_s + ") + localItem];\n"
-	"tempStorage[((i - 1) * " + nrThreadsPerBlock_s + ") + localItem] = temp;\n"
+	"if ( (i != "+ nrThreadsPerBlock_s + ") || (get_local_id(0) < " + nrThreadsPerBlock_s + " / 2) ) {\n"
+	"temp = tempStorage[(get_local_id(0) * " + nrThreadsPerBlock_s + ") + localItem];\n"
+	"tempStorage[(get_local_id(0) * " + nrThreadsPerBlock_s + ") + localItem] = tempStorage[(localItem * " + nrThreadsPerBlock_s + ") + get_local_id(0)];\n"
+	"tempStorage[(localItem * " + nrThreadsPerBlock_s + ") + get_local_id(0)] = temp;\n"
+	"}\n"
 	"}\n"
 	"barrier(CLK_LOCAL_MEM_FENCE);\n"
 	// Store output
