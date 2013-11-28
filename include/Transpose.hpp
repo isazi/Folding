@@ -101,7 +101,7 @@ template< typename T > void Transpose< T >::generateCode() throw (OpenCLError) {
 	"}\n";
 	// End kernel's template
 
-	globalSize = cl::NDRange(observation->getNrDMs(), ceil(observation->getNrSamplesPerSecond() / nrThreadsPerBlock);
+	globalSize = cl::NDRange(observation->getNrDMs(), ceil(observation->getNrSamplesPerSecond() / nrThreadsPerBlock));
 	localSize = cl::NDRange(nrThreadsPerBlock, 1);
 
 	this->gb = giga(static_cast< long long unsigned int >(observation->getNrDMs()) * observation->getNrSamplesPerSecond() * 2 * sizeof(T));
