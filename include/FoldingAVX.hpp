@@ -62,7 +62,7 @@ void folding(const unsigned int second, const Observation< float > & observation
 					sample %= observation.getNrSamplesPerSecond();
 				}	
 				while ( sample < observation.getNrSamplesPerSecond() ) {
-					foldedSample = _mm256_add_ps(foldedSample, _mm256_load_ps(&(samples[(sample * observation.getNrPaddedDMs()) + dm])));
+					foldedSample = _mm256_add_ps(foldedSample, _mm256_loadu_ps(&(samples[(sample * observation.getNrPaddedDMs()) + dm])));
 					foldedCounter++;
 
 					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)) == 0 ) {
@@ -73,12 +73,12 @@ void folding(const unsigned int second, const Observation< float > & observation
 				}
 
 				if ( foldedCounter > 0 ) {
-					const __m256 pValue = _mm256_load_ps(&(bins[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm]));
+					const __m256 pValue = _mm256_loadu_ps(&(bins[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm]));
 					float addedFraction = static_cast< float >(foldedCounter) / (foldedCounter + pCounter);
 
 					foldedSample = _mm256_div_ps(foldedSample, _mm256_set1_ps(static_cast< float >(foldedCounter)));
 					foldedSample = _mm256_mul_ps(foldedSample, _mm256_set1_ps(addedFraction));
-					_mm256_store_ps(&(bins[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm]), _mm256_add_ps(foldedSample, _mm256_mul_ps(pValue, _mm256_set1_ps(1.0f - addedFraction))));
+					_mm256_storeu_ps(&(bins[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (periodIndex * observation.getNrPaddedDMs()) + dm]), _mm256_add_ps(foldedSample, _mm256_mul_ps(pValue, _mm256_set1_ps(1.0f - addedFraction))));
 					writeCounters[(periodIndex * observation.getNrPaddedBins()) + bin] = pCounter + foldedCounter;
 				}
 			}
