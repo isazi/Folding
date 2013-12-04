@@ -38,11 +38,11 @@ using PulsarSearch::getNrSamplesPerBin;
 namespace PulsarSearch {
 
 // OpenMP folding algorithm
-void folding(const unsigned int second, const Observation< float > & observation, const float * const __restrict__ samples, float * const __restrict__ bins, unsigned int * const __restrict__ writeCounters, const unsigned int * const __restrict__ readCounters);
+void folding(const unsigned int second, const Observation< float > & observation, const float * const __restrict__ samples, float * const __restrict__ bins, const unsigned int * const __restrict__ readCounters, unsigned int * const __restrict__ writeCounters);
 
 
 // Implementation
-void folding(const unsigned int second, const Observation< float > & observation, const float * const __restrict__ samples, float * const __restrict__ bins, unsigned int * const __restrict__ writeCounters, const unsigned int * const __restrict__ readCounters) {
+void folding(const unsigned int second, const Observation< float > & observation, const float * const __restrict__ samples, float * const __restrict__ bins, const unsigned int * const __restrict__ readCounters, unsigned int * const __restrict__ writeCounters) {
 	vector< unsigned int > * samplesPerBin = getNrSamplesPerBin(observation);
 
 	#pragma omp parallel for schedule(static)

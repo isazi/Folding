@@ -34,7 +34,6 @@ using std::numeric_limits;
 #include <cmath>
 #include <ctime>
 
-
 #include <ArgumentList.hpp>
 using isa::utils::ArgumentList;
 #include <Observation.hpp>
