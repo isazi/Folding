@@ -62,11 +62,11 @@ const unsigned int padding = 8;
 // Apertif
 const unsigned int nrSamplesPerSecond = 20000;
 // DMs
-const unsigned int nrDMs = 256;
+const unsigned int nrDMs = 2048;
 // Periods
-const unsigned int nrPeriods = 128;
-const unsigned int nrBins = 256;
-const unsigned int periodStep = 64;
+const unsigned int nrPeriods = 512;
+const unsigned int nrBins = 128;
+const unsigned int periodStep = 32;
 
 
 int main(int argc, char *argv[]) {
