@@ -56,16 +56,6 @@ typedef float dataType;
 const string typeName("float");
 const unsigned int padding = 8;
 
-//const unsigned int nrSamplesPerSecond = 200000;
-// Apertif
-const unsigned int nrSamplesPerSecond = 20000;
-// DMs
-const unsigned int nrDMs = 2048;
-// Periods
-const unsigned int nrPeriods = 512;
-const unsigned int nrBins = 128;
-const unsigned int periodStep = 32;
-
 
 int main(int argc, char *argv[]) {
 	long long unsigned int wrongValues = 0;
@@ -75,7 +65,6 @@ int main(int argc, char *argv[]) {
 	CLData< dataType > * foldedDataCPU = new CLData<dataType >("FoldedDataCPU", true);
 	CLData< dataType > * foldedDataTraditional = new CLData<dataType >("FoldedDataTraditional", true);
 	CLData< unsigned int > * counterData = new CLData< unsigned int >("CounterData", true);
-	CLData< unsigned int > * nrSamplesPerBin = new CLData< unsigned int >("NrSamplesPerBin", true);
 
 	try {
 		ArgumentList args(argc, argv);
@@ -100,8 +89,6 @@ int main(int argc, char *argv[]) {
 	foldedDataTraditional->allocateHostData(observation.getNrDMs() * observation.getNrPaddedBins() * observation.getNrPeriods());
 	foldedDataTraditional->blankHostData();
 	counterData->allocateHostData(observation.getNrPeriods() * observation.getNrPaddedBins());
-	vector< unsigned int > * nrSamplesPerBinData = getNrSamplesPerBin(observation);
-	nrSamplesPerBin->allocateHostData(*nrSamplesPerBinData);
 
 	srand(time(NULL));
 	for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {

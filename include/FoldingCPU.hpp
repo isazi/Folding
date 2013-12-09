@@ -64,7 +64,7 @@ template< typename T > void folding(const unsigned int second, const Observation
 					foldedSample += samples[(sample * observation.getNrPaddedDMs()) + dm];
 					foldedCounter++;
 
-					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * observation.getNrPaddedBins()) + bin) == 0 ) {
+					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)) == 0 ) {
 						sample += periodValue;
 					} else {
 						sample++;

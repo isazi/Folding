@@ -1,5 +1,5 @@
 
-debug		:= 0
+debug		:= 1
 include		../Makefile.inc
 
 
