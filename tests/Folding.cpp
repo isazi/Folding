@@ -109,9 +109,9 @@ int main(int argc, char *argv[]) {
 	dedispersedData->allocateHostData(observation.getNrSamplesPerSecond() * observation.getNrPaddedDMs());
 	foldedData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
 	foldedData->blankHostData();
-	readCounterData->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	readCounterData->allocateHostData(observation.getNrPeriods() * observation.getNrPaddedBins());
 	readCounterData->blankHostData();
-	writeCounterData->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	writeCounterData->allocateHostData(observation.getNrPeriods() * observation.getNrPaddedBins());
 	writeCounterData->blankHostData();
 	vector< unsigned int > * nrSamplesPerBinData = getNrSamplesPerBin(observation);
 	nrSamplesPerBin->allocateHostData(*nrSamplesPerBinData);
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
 	CLData< dataType > * CPUFolded = new CLData<dataType >("CPUFolded", true);
 	CLData< unsigned int > * CPUCounter = new CLData< unsigned int >("CPUCounter", true);
 	CPUFolded->allocateHostData(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
-	CPUCounter->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	CPUCounter->allocateHostData(observation.getNrPeriods() * observation.getNrPaddedBins());
 	CPUCounter->blankHostData();
 	folding(0, observation, dedispersedData->getHostData(), CPUFolded->getHostData(), CPUCounter->getHostData());
 	for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
