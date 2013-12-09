@@ -58,6 +58,7 @@ const unsigned int padding = 8;
 
 
 int main(int argc, char *argv[]) {
+	bool print = false;
 	long long unsigned int wrongValues = 0;
 	Observation< dataType > observation("FoldingTest", typeName);
 	CLData< dataType > * dedispersedData = new CLData< dataType >("DedispersedData", true);
@@ -70,6 +71,8 @@ int main(int argc, char *argv[]) {
 	try {
 		ArgumentList args(argc, argv);
 		
+		print = args.getSwitch("-print");
+
 		observation.setPadding(padding);
 		observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
@@ -105,26 +108,28 @@ int main(int argc, char *argv[]) {
 	// Test & Check
 	folding(0, observation, dedispersedData->getHostData(), foldedDataCPU->getHostData(), counterData->getHostData());
 	traditionalFolding(0, observation, dedispersedDataTraditional->getHostData(), foldedDataTraditional->getHostData(), counterDataTraditional->getHostData());
-	for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
-		for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
-			for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
-				cout << foldedDataCPU->getHostDataItem((bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + DM) << "-" << counterData->getHostDataItem((period * observation.getNrPaddedBins()) + bin) << " ";
+	if ( print ) {
+		for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
+			for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
+				for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
+					cout << foldedDataCPU->getHostDataItem((bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + DM) << "-" << counterData->getHostDataItem((period * observation.getNrPaddedBins()) + bin) << " ";
+				}
+				cout << endl;
+			}
+			cout << endl;
+		}
+		cout << endl;
+		for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
+			for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
+				for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
+					cout << foldedDataTraditional->getHostDataItem((((DM * observation.getNrPeriods()) + period) * observation.getNrPaddedBins()) + bin) << "-" << counterDataTraditional->getHostDataItem((((DM * observation.getNrPeriods()) + period) * observation.getNrPaddedBins()) + bin) << " ";
+				}
+				cout << endl;
 			}
 			cout << endl;
 		}
 		cout << endl;
 	}
-	cout << endl;
-	for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
-		for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
-			for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
-				cout << foldedDataTraditional->getHostDataItem((((DM * observation.getNrPeriods()) + period) * observation.getNrPaddedBins()) + bin) << "-" << counterDataTraditional->getHostDataItem((((DM * observation.getNrPeriods()) + period) * observation.getNrPaddedBins()) + bin) << " ";
-			}
-			cout << endl;
-		}
-		cout << endl;
-	}
-	cout << endl;
 	for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
 		long long unsigned int wrongValuesBin = 0;
 
