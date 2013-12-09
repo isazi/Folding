@@ -37,8 +37,9 @@ using PulsarSearch::getNrSamplesPerBin;
 
 namespace PulsarSearch {
 
-// OpenMP folding algorithm
+// Sequantial folding algorithms
 template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters);
+template< typename T > void traditionalFolding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters);
 
 
 // Implementation
@@ -63,7 +64,7 @@ template< typename T > void folding(const unsigned int second, const Observation
 					foldedSample += samples[(sample * observation.getNrPaddedDMs()) + dm];
 					foldedCounter++;
 
-					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)) == 0 ) {
+					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * observation.getNrPaddedBins()) + bin) == 0 ) {
 						sample += periodValue;
 					} else {
 						sample++;
@@ -83,6 +84,32 @@ template< typename T > void folding(const unsigned int second, const Observation
 			}
 		}
 	}
+}
+
+template< typename T > void traditionalFolding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters) {
+    for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
+        for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex++ ) {
+            const unsigned int periodValue = observation.getFirstPeriod() + (periodIndex * observation.getPeriodStep());
+            
+            for ( unsigned int globalSample = 0; globalSample < observation.getNrSamplesPerSecond(); globalSample++ ) {
+                const unsigned int sample = (second * observation.getNrSamplesPerSecond()) + globalSample;
+                const float phase = (sample / static_cast< float >(periodValue)) - (sample / periodValue);
+                const unsigned int bin = static_cast< unsigned int >(phase * static_cast< float >(observation.getNrBins()));
+                const unsigned int globalItem = (((dm * observation.getNrPeriods()) + periodIndex) * observation.getNrPaddedBins()) + bin;
+
+                const T pValue = bins[globalItem];
+                T cValue = samples[(dm * observation.getNrSamplesPerPaddedSecond()) + globalSample];
+                const unsigned int pCounter = counters[globalItem];
+                unsigned int cCounter = pCounter + 1;
+
+                if ( pCounter != 0 ) {
+                	cValue = pValue + ((cValue - pValue) / cCounter);
+                }
+                bins[globalItem] = cValue;
+                counters[globalItem] = cCounter;
+            }
+        }
+    }
 }
 
 } // PulsarSearch
