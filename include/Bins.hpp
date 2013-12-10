@@ -40,7 +40,7 @@ template< typename T > vector< unsigned int > * getNrSamplesPerBin(const Observa
 
 		for ( unsigned int bin = 0; bin < obs.getNrBins(); bin++ ) {
 			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2)) = periodValue / obs.getNrBins();
-			if ( (bin % (obs.getNrBins() / (periodValue % obs.getNrBins())))  == 0 ) {
+			if ( ((periodValue % obs.getNrBins()) != 0) && ((bin % (obs.getNrBins() / (periodValue % obs.getNrBins()))) == 0) ) {
 				samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2)) += 1;
 			}
 			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2) + 1) = offset;
