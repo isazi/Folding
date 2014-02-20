@@ -1,21 +1,20 @@
-/*
- * Copyright (C) 2013
- * Alessio Sclocco <a.sclocco@vu.nl>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- */
+//
+// Copyright (C) 2013
+// Alessio Sclocco <a.sclocco@vu.nl>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include <iostream>
 #include <string>
@@ -55,15 +54,12 @@ using PulsarSearch::getNrSamplesPerBin;
 
 typedef float dataType;
 const string typeName("float");
-const unsigned int maxThreadsPerBlock = 1024;
-const unsigned int maxThreadsMultiplier = 512;
-const unsigned int maxItemsPerThread = 16;
-const unsigned int maxItemsMultiplier = 16;
-const unsigned int padding = 32;
 
 
 int main(int argc, char * argv[]) {
 	unsigned int lowerNrThreads = 0;
+	unsigned int maxThreadsPerBlock = 0;
+	unsigned int maxItemsPerThread = 16;
 	unsigned int nrIterations = 0;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
@@ -80,9 +76,12 @@ int main(int argc, char * argv[]) {
 
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
+		observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
 		nrIterations = args.getSwitchArgument< unsigned int >("-iterations");
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
 		lowerNrThreads = args.getSwitchArgument< unsigned int >("-lnt");
+		maxThreadsPerBlock = args.getSwitchArgument< unsigned int >("-mnt");
+		maxItemsPerThread = args.getSwitchArgument< unsigned int >("-mit");
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
 		observation.setFirstPeriod(args.getSwitchArgument< unsigned int >("-first_period"));
 		observation.setPeriodStep(args.getSwitchArgument< unsigned int >("-period_step"));
@@ -93,9 +92,6 @@ int main(int argc, char * argv[]) {
 		return 1;
 	}
 
-	// Setup of the observation
-	observation.setPadding(padding);
-	
 	cl::Context * clContext = new cl::Context();
 	vector< cl::Platform > * clPlatforms = new vector< cl::Platform >();
 	vector< cl::Device > * clDevices = new vector< cl::Device >();
@@ -147,19 +143,19 @@ int main(int argc, char * argv[]) {
 
 	// Find the parameters
 	vector< vector< unsigned int > > configurations;
-	for ( unsigned int DMsPerBlock = lowerNrThreads; DMsPerBlock <= maxThreadsPerBlock; DMsPerBlock++ ) {
-		if ( observation.getNrDMs() % DMsPerBlock != 0 ) {
+	for ( unsigned int DMsPerBlock = lowerNrThreads; DMsPerBlock <= maxThreadsPerBlock; DMsPerBlock += lowerNrThreads ) {
+		if ( observation.getNrPaddedDMs() % DMsPerBlock != 0 ) {
 			continue;
 		}
 
-		for ( unsigned int periodsPerBlock = 1; periodsPerBlock <= maxThreadsMultiplier; periodsPerBlock++ ) {
+		for ( unsigned int periodsPerBlock = 1; periodsPerBlock <= maxThreadsPerBlock; periodsPerBlock++ ) {
 			if ( observation.getNrPeriods() % periodsPerBlock != 0 ) {
 				continue;
 			} else if ( DMsPerBlock * periodsPerBlock > maxThreadsPerBlock ) {
 				break;
 			}
 
-			for ( unsigned int binsPerBlock = 1; binsPerBlock <= maxThreadsMultiplier; binsPerBlock++ ) {
+			for ( unsigned int binsPerBlock = 1; binsPerBlock <= maxThreadsPerBlock; binsPerBlock++ ) {
 				if ( observation.getNrBins() % binsPerBlock != 0 ) {
 					continue;
 				} else if ( DMsPerBlock * periodsPerBlock * binsPerBlock > maxThreadsPerBlock ) {
@@ -167,18 +163,18 @@ int main(int argc, char * argv[]) {
 				}
 
 				for ( unsigned int DMsPerThread = 1; DMsPerThread <= maxItemsPerThread; DMsPerThread++ ) {
-					if ( observation.getNrDMs() % (DMsPerBlock * DMsPerThread) != 0 ) {
+					if ( observation.getNrPaddedDMs() % (DMsPerBlock * DMsPerThread) != 0 ) {
 						continue;
 					}
 
-					for ( unsigned int periodsPerThread = 1; periodsPerThread <= maxItemsMultiplier; periodsPerThread++ ) {
+					for ( unsigned int periodsPerThread = 1; periodsPerThread <= maxItemsPerThread; periodsPerThread++ ) {
 						if ( observation.getNrPeriods() % (periodsPerBlock * periodsPerThread) != 0 ) {
 							continue;
 						} else if ( (DMsPerThread + (2 * periodsPerThread)) > maxItemsPerThread ) {
 							break;
 						}
 
-						for ( unsigned int binsPerThread = 1; binsPerThread <= maxItemsMultiplier; binsPerThread++ ) {
+						for ( unsigned int binsPerThread = 1; binsPerThread <= maxItemsPerThread; binsPerThread++ ) {
 							if ( observation.getNrBins() % (binsPerBlock * binsPerThread) != 0 ) {
 								continue;
 							} else if ( (DMsPerThread + (2 * periodsPerThread) + binsPerThread) + (3 * periodsPerThread * binsPerThread) + (2 * DMsPerThread * periodsPerThread * binsPerThread) > maxItemsPerThread ) {
