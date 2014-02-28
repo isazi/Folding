@@ -199,11 +199,6 @@ int main(int argc, char * argv[]) {
 	}
 
 	for ( vector< vector< unsigned int > >::const_iterator parameters = configurations.begin(); parameters != configurations.end(); parameters++ ) {
-		double Acur = 0.0;
-		double Aold = 0.0;
-		double Vcur = 0.0;
-		double Vold = 0.0;
-
 		try {
 			// Generate kernel
 			Folding< dataType > clFold("clFold", typeName);
@@ -225,20 +220,9 @@ int main(int argc, char * argv[]) {
 			for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
 				foldedData->copyHostToDevice();
 				clFold(0, dedispersedData, foldedData, readCounterData, writeCounterData);
-				
-				if ( iteration == 0 ) {
-					Acur = clFold.getGFLOP() / clFold.getTimer().getLastRunTime();
-				} else {
-					Aold = Acur;
-					Vold = Vcur;
-
-					Acur = Aold + (((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Aold) / (iteration + 1));
-					Vcur = Vold + (((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Aold) * ((clFold.getGFLOP() / clFold.getTimer().getLastRunTime()) - Acur));
-				}
 			}
-			Vcur = sqrt(Vcur / nrIterations);
 
-			cout << observation.getNrDMs() << " " << observation.getNrPeriods() << " " << observation.getFirstPeriod() << " " << observation.getPeriodStep() << " " << observation.getNrBins() << " " << observation.getNrSamplesPerSecond() << " " << (*parameters)[0] << " " << (*parameters)[1] << " " << (*parameters)[2] << " " << (*parameters)[3] << " " << (*parameters)[4] << " " << (*parameters)[5] << " " << setprecision(3) << Acur << " " << Vcur << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << endl;
+			cout << observation.getNrDMs() << " " << observation.getNrPeriods() << " " << observation.getFirstPeriod() << " " << observation.getPeriodStep() << " " << observation.getNrBins() << " " << observation.getNrSamplesPerSecond() << " " << (*parameters)[0] << " " << (*parameters)[1] << " " << (*parameters)[2] << " " << (*parameters)[3] << " " << (*parameters)[4] << " " << (*parameters)[5] << " " << setprecision(3) << clFold.getGFLOPs() << " " << clFold.getGFLOPsErr() << " " << setprecision(6) << clFold.getTimer().getAverageTime() << " " << clFold.getTimer().getStdDev() << endl;
 		} catch ( OpenCLError err ) {
 			cerr << err.what() << endl;
 			continue;
