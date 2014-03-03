@@ -216,6 +216,7 @@ int main(int argc, char * argv[]) {
 			foldedData->copyHostToDevice();
 			clFold(0, dedispersedData, foldedData, readCounterData, writeCounterData);
 			(clFold.getTimer()).reset();
+			clFold.resetStats();
 			
 			for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
 				foldedData->copyHostToDevice();
