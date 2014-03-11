@@ -60,6 +60,8 @@ int main(int argc, char * argv[]) {
 	unsigned int lowerNrThreads = 0;
 	unsigned int maxThreadsPerBlock = 0;
 	unsigned int maxItemsPerThread = 16;
+	unsigned int maxColumns = 0;
+	unsigned int maxRows = 0;
 	unsigned int nrIterations = 0;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
@@ -82,6 +84,8 @@ int main(int argc, char * argv[]) {
 		lowerNrThreads = args.getSwitchArgument< unsigned int >("-lnt");
 		maxThreadsPerBlock = args.getSwitchArgument< unsigned int >("-mnt");
 		maxItemsPerThread = args.getSwitchArgument< unsigned int >("-mit");
+		maxColumns = args.getSwitchArgument< unsigned int >("-max_columns");
+		maxRows = args.getSwitchArgument< unsigned int >("-max_rows");
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
 		observation.setFirstPeriod(args.getSwitchArgument< unsigned int >("-first_period"));
 		observation.setPeriodStep(args.getSwitchArgument< unsigned int >("-period_step"));
@@ -143,19 +147,19 @@ int main(int argc, char * argv[]) {
 
 	// Find the parameters
 	vector< vector< unsigned int > > configurations;
-	for ( unsigned int DMsPerBlock = lowerNrThreads; DMsPerBlock <= maxThreadsPerBlock; DMsPerBlock += lowerNrThreads ) {
+	for ( unsigned int DMsPerBlock = lowerNrThreads; DMsPerBlock <= maxColumns; DMsPerBlock += lowerNrThreads ) {
 		if ( observation.getNrPaddedDMs() % DMsPerBlock != 0 ) {
 			continue;
 		}
 
-		for ( unsigned int periodsPerBlock = 1; periodsPerBlock <= maxThreadsPerBlock; periodsPerBlock++ ) {
+		for ( unsigned int periodsPerBlock = 1; periodsPerBlock <= maxRows; periodsPerBlock++ ) {
 			if ( observation.getNrPeriods() % periodsPerBlock != 0 ) {
 				continue;
 			} else if ( DMsPerBlock * periodsPerBlock > maxThreadsPerBlock ) {
 				break;
 			}
 
-			for ( unsigned int binsPerBlock = 1; binsPerBlock <= maxThreadsPerBlock; binsPerBlock++ ) {
+			for ( unsigned int binsPerBlock = 1; binsPerBlock <= maxRows; binsPerBlock++ ) {
 				if ( observation.getNrBins() % binsPerBlock != 0 ) {
 					continue;
 				} else if ( DMsPerBlock * periodsPerBlock * binsPerBlock > maxThreadsPerBlock ) {
