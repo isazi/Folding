@@ -1,20 +1,16 @@
+// Copyright 2013 Alessio Sclocco <a.sclocco@vu.nl>
 //
-// Copyright (C) 2013
-// Alessio Sclocco <a.sclocco@vu.nl>
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #define __CL_ENABLE_EXCEPTIONS
 #include <CL/cl.hpp>
@@ -52,7 +48,7 @@ namespace PulsarSearch {
 template< typename T > class Folding : public Kernel< T > {
 public:
 	Folding(string name, string dataType);
-	
+
 	void generateCode() throw (OpenCLError);
 	void operator()(unsigned int second, CLData< T > * input, CLData< T > * output, CLData< unsigned int > * readCounters, CLData< unsigned int > * writeCounters) throw (OpenCLError);
 
@@ -125,7 +121,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 
 	string defsTemplate = "unsigned int foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
 		+ this->dataType + " foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
-		
+
 	string computeTemplate = "sample = offsetp<%PERIOD_NUM%>b<%BIN_NUM%> + ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
 	"if ( (sample / "+ nrSamplesPerSecond_s + ") == second ) {\n"
 	"sample %= "+ nrSamplesPerSecond_s + ";\n"
@@ -202,10 +198,10 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 	}
 	for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
 		string * bin_s = toString< unsigned int >(bin);
-		
+
 		for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
 			string * period_s = toString< unsigned int >(period);
-			
+
 			for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
 				string * DM_s = toString< unsigned int >(DM);
 				string * temp = 0;
@@ -222,7 +218,7 @@ template< typename T > void Folding< T >::generateCode() throw (OpenCLError) {
 				stores->append(*temp);
 				delete temp;
 
-				delete DM_s;		
+				delete DM_s;
 			}
 
 			delete period_s;
