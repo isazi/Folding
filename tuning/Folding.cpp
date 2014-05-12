@@ -107,9 +107,9 @@ int main(int argc, char * argv[]) {
 	dedispersedData->blankHostData();
 	foldedData->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
 	foldedData->blankHostData();
-	readCounterData->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	readCounterData->allocateHostData(observation.getNrPeriods() * observation.getNrPaddedBins());
 	readCounterData->blankHostData();
-	writeCounterData->allocateHostData(observation.getNrPeriods() * 2 * observation.getNrPaddedBins());
+	writeCounterData->allocateHostData(observation.getNrPeriods() * observation.getNrPaddedBins());
 	writeCounterData->blankHostData();
 	vector< unsigned int > * nrSamplesPerBinData = getNrSamplesPerBin(observation);
 	nrSamplesPerBin->allocateHostData(*nrSamplesPerBinData);
