@@ -24,11 +24,11 @@
 
 namespace PulsarSearch {
 
-template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const AstroData::Observation< T > & obs, unsigned int padding);
+template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const AstroData::Observation< T > & obs);
 
 // Implementation
-template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const AstroData::Observation< T > & obs, unsigned int padding) {
-  std::vector< unsigned int > * samplesPerBin = new std::vector< unsigned int >(obs.getNrPeriods() * obs.getNrBins() * isa::utils::pad(2, padding));
+template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const AstroData::Observation< T > & obs) {
+  std::vector< unsigned int > * samplesPerBin = new std::vector< unsigned int >(obs.getNrPeriods() * obs.getNrBins() * isa::utils::pad(2, obs.getPadding()));
 
 	for ( unsigned int period = 0; period < obs.getNrPeriods(); period++ ) {
 		unsigned int offset = 0;
