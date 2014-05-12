@@ -49,8 +49,8 @@ template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const As
     }
 
 		for ( unsigned int bin = 0; bin < obs.getNrBins(); bin++ ) {
-      samplesPerBin->at((period * obs.getNrBins() * pad(2, padding)) + (bin * pad(2, padding))) = itemsPerBin[bin];
-      samplesPerBin->at((period * obs.getNrBins() * pad(2, padding)) + (bin * pad(2, padding)) + 1) = offset;
+      samplesPerBin->at((period * obs.getNrBins() * pad(2, obs.getPadding())) + (bin * pad(2, obs.getPadding()))) = itemsPerBin[bin];
+      samplesPerBin->at((period * obs.getNrBins() * pad(2, obs.getPadding())) + (bin * pad(2, obs.getPadding())) + 1) = offset;
       offset += itemsPerBin[bin];
     }
 	}
