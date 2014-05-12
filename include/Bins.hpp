@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include <vector>
-using std::vector;
+#include <algorithm>
 
 #include <Observation.hpp>
-using AstroData::Observation;
+#include <utils.hpp>
 
 
 #ifndef BINS_HPP
@@ -24,24 +24,35 @@ using AstroData::Observation;
 
 namespace PulsarSearch {
 
-template< typename T > vector< unsigned int > * getNrSamplesPerBin(const Observation< T > & obs);
+template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const AstroData::Observation< T > & obs, unsigned int padding);
 
 // Implementation
-template< typename T > vector< unsigned int > * getNrSamplesPerBin(const Observation< T > & obs) {
-	vector< unsigned int > * samplesPerBin = new vector< unsigned int >(obs.getNrPeriods() * 2 * obs.getNrPaddedBins());
+template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const AstroData::Observation< T > & obs, unsigned int padding) {
+  std::vector< unsigned int > * samplesPerBin = new std::vector< unsigned int >(obs.getNrPeriods() * obs.getNrBins() * isa::utils::pad(2, padding));
 
 	for ( unsigned int period = 0; period < obs.getNrPeriods(); period++ ) {
 		unsigned int offset = 0;
-		unsigned int periodValue = obs.getFirstPeriod() + (period * obs.getPeriodStep());
+    std::vector< unsigned int > itemsPerBin;
+    std::vector< unsigned int > offsetPerBin;
+
+    std::fill(itemsPerBin.begin(), itemsPerBin.end(), 0);
+    std::fill(offsetPerBin.begin(), offsetPerBin.end(), 0);
+    for ( unsigned int i = 0; i < period; i++ ) {
+      float samplePhase = (i / period);
+
+      for ( unsigned int bin = 0; bin < obs.getNrBins(); bin++ ) {
+        if ( samplePhase - ((bin + 0.5) / obs.getNrBins()) < 1.0f / obs.getNrBins() ) {
+          itemsPerBin[bin] += 1;
+          break;
+        }
+      }
+    }
 
 		for ( unsigned int bin = 0; bin < obs.getNrBins(); bin++ ) {
-			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2)) = periodValue / obs.getNrBins();
-			if ( ((periodValue % obs.getNrBins()) != 0) && ((bin % (obs.getNrBins() / (periodValue % obs.getNrBins()))) == 0) ) {
-				samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2)) += 1;
-			}
-			samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2) + 1) = offset;
-			offset += samplesPerBin->at((period * 2 * obs.getNrPaddedBins()) + (bin * 2));
-		}
+      samplesPerBin->at((period * obs.getNrBins() * pad(2, padding)) + (bin * pad(2, padding))) = itemsPerBin[bin];
+      samplesPerBin->at((period * obs.getNrBins() * pad(2, padding)) + (bin * pad(2, padding)) + 1) = offset;
+      offset += itemsPerBin[bin];
+    }
 	}
 
 	return samplesPerBin;
