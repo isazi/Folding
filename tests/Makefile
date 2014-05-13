@@ -14,8 +14,12 @@ FoldingAVX: FoldingAVX.cpp
 FoldingCPU: FoldingCPU.cpp
 	$(LINKER) -o $(PROJ_BASE)/bin/FoldingCPUTest FoldingCPU.cpp $(UTILS_SRC) $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
 
+Bins: Bins.cpp
+	$(LINKER) -o $(PROJ_BASE)/bin/BinsTest Bins.cpp $(UTILS_SRC) $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
+
 clean:
 	rm -f $(PROJ_BASE)/bin/FoldingTest
 	rm -f $(PROJ_BASE)/bin/FoldingAVXTest
 	rm -f $(PROJ_BASE)/bin/FoldingCPUTest
+	rm -f $(PROJ_BASE)/bin/BinsTest
 
