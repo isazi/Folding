@@ -33,7 +33,7 @@ using PulsarSearch::getNrSamplesPerBin;
 
 namespace PulsarSearch {
 
-// Sequantial folding algorithms
+// Sequential folding algorithms
 template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters);
 template< typename T > void traditionalFolding(const unsigned int second, const Observation< T > & observation, const T * const __restrict__ samples, T * const __restrict__ bins, unsigned int * const __restrict__ counters);
 
@@ -51,7 +51,7 @@ template< typename T > void folding(const unsigned int second, const Observation
 			for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
 				T foldedSample = 0;
 				unsigned int foldedCounter = 0;
-				unsigned int sample = samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2) + 1) + ((pCounter / samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2))) * periodValue) + (pCounter % samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)));
+				unsigned int sample = samplesPerBin->at((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding()) + (bin * isa::utils::pad(2, observation.getPadding())) + 1)) + ((pCounter / samplesPerBin->at((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())))) * periodValue) + (pCounter % samplesPerBin->at((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))));
 
 				if ( (sample / observation.getNrSamplesPerSecond()) == second ) {
 					sample %= observation.getNrSamplesPerSecond();
@@ -60,8 +60,8 @@ template< typename T > void folding(const unsigned int second, const Observation
 					foldedSample += samples[(sample * observation.getNrPaddedDMs()) + dm];
 					foldedCounter++;
 
-					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)) == 0 ) {
-						sample += periodValue - (samplesPerBin->at((periodIndex * 2 * observation.getNrPaddedBins()) + (bin * 2)) - 1);
+					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * observation.getNrPaddedBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) == 0 ) {
+						sample += periodValue - (samplesPerBin->at((periodIndex * observation.getNrPaddedBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) - 1);
 					} else {
 						sample++;
 					}
