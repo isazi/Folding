@@ -51,17 +51,6 @@ typedef float dataType;
 const string typeName("float");
 const unsigned int padding = 32;
 
-// LOFAR
-//const unsigned int nrSamplesPerSecond = 200000;
-// Apertif
-const unsigned int nrSamplesPerSecond = 20000;
-// DMs
-const unsigned int nrDMs = 256;
-// Periods
-const unsigned int nrPeriods = 128;
-const unsigned int nrBins = 256;
-const unsigned int periodStep = 64;
-
 
 int main(int argc, char *argv[]) {
 	unsigned int clPlatformID = 0;
@@ -79,6 +68,13 @@ int main(int argc, char *argv[]) {
 
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
+		
+    observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
+		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
+		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
+		observation.setFirstPeriod(args.getSwitchArgument< unsigned int >("-period_first"));
+		observation.setPeriodStep(args.getSwitchArgument< unsigned int >("-period_step"));
+		observation.setNrBins(args.getSwitchArgument< unsigned int >("-bins"));
 
 	} catch ( exception &err ) {
 		cerr << err.what() << endl;
