@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
 		
+    observation.setPadding(padding);
     observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
@@ -80,15 +81,6 @@ int main(int argc, char *argv[]) {
 		cerr << err.what() << endl;
 		return 1;
 	}
-
-	// Setup of the observation
-	observation.setPadding(padding);
-	observation.setNrSamplesPerSecond(nrSamplesPerSecond);
-	observation.setNrDMs(nrDMs);
-	observation.setNrPeriods(nrPeriods);
-	observation.setFirstPeriod(nrBins);
-	observation.setPeriodStep(periodStep);
-	observation.setNrBins(nrBins);
 
 	cl::Context * clContext = new cl::Context();
 	vector< cl::Platform > * clPlatforms = new vector< cl::Platform >();
