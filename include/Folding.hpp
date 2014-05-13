@@ -47,7 +47,7 @@ public:
 	inline void setNrPeriodsPerThread(unsigned int periods);
 	inline void setNrBinsPerThread(unsigned int bins);
 
-	inline void setAstroData::Observation(AstroData::Observation< T > * obs);
+	inline void setObservation(AstroData::Observation< T > * obs);
 	inline void setNrSamplesPerBin(isa::OpenCL::CLData< unsigned int > * samplesPerBin);
 
 private:
@@ -265,7 +265,7 @@ template< typename T > inline void Folding< T >::setNrBinsPerThread(unsigned int
 	nrBinsPerThread = bins;
 }
 
-template< typename T > inline void Folding< T >::setAstroData::Observation(AstroData::Observation< T > * obs) {
+template< typename T > inline void Folding< T >::setObservation(AstroData::Observation< T > * obs) {
 	observation = obs;
 }
 
