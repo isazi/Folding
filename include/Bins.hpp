@@ -38,7 +38,7 @@ template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const As
     std::fill(itemsPerBin.begin(), itemsPerBin.end(), 0);
     std::fill(offsetPerBin.begin(), offsetPerBin.end(), 0);
     for ( unsigned int i = 0; i < period; i++ ) {
-      float samplePhase = (static_cast< float >(i) / period);
+      float samplePhase = (static_cast< float >(i) / (obs.getFirstPeriod() + (obs.getPeriodStep() * period)));
 
       for ( unsigned int bin = 0; bin < obs.getNrBins(); bin++ ) {
         if ( samplePhase - ((bin + 0.5f) / obs.getNrBins()) < 1.0f / obs.getNrBins() ) {
