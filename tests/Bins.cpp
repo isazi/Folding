@@ -28,14 +28,14 @@ const unsigned int nrBins = 128;
 
 int main(int argc, char *argv[]) {
   std::vector< unsigned int > * samplesPerBin = 0;
-  AstroData::Observation obs("BinsTest", "float");
+  AstroData::Observation< float > obs("BinsTest", "float");
 
   obs.setPadding(padding);
   obs.setNrPeriods(nrPeriods);
   obs.setFirstPeriod(firstPeriod);
   obs.setPeriodStep(periodStep);
   obs.setNrBins(nrBins);
-  samplesPerBin = getNrSamplesPerBin(obs);
+  samplesPerBin = PulsarSearch::getNrSamplesPerBin(obs);
   
   std::cout << "Samples/bin:" << std::endl;
   for ( unsigned int period = 0; period < obs.getNrPeriods(); period++ ) {
