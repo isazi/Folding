@@ -48,7 +48,7 @@ template< typename T > void folding(const unsigned int second, const Observation
 		for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
 			const unsigned int pCounter = counters[(periodIndex * observation.getNrPaddedBins()) + bin];
       const unsigned int mySamples = samplesPerBin->at((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) * (bin * isa::utils::pad(2, observation.getPadding())));
-      const unsigned int myOffset = samplesPerBin->((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) * (bin * isa::utils::pad(2, observation.getPadding())) + 1);
+      const unsigned int myOffset = samplesPerBin->at((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) * (bin * isa::utils::pad(2, observation.getPadding())) + 1);
 
       if ( mySamples == 0 ) {
         continue;
