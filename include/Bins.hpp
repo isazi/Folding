@@ -32,8 +32,8 @@ template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const As
 
 	for ( unsigned int period = 0; period < obs.getNrPeriods(); period++ ) {
 		unsigned int offset = 0;
-    std::vector< unsigned int > itemsPerBin;
-    std::vector< unsigned int > offsetPerBin;
+    std::vector< unsigned int > itemsPerBin(obs.getNrBins());
+    std::vector< unsigned int > offsetPerBin(obs.getNrBins());
 
     std::fill(itemsPerBin.begin(), itemsPerBin.end(), 0);
     std::fill(offsetPerBin.begin(), offsetPerBin.end(), 0);
@@ -49,8 +49,8 @@ template< typename T > std::vector< unsigned int > * getNrSamplesPerBin(const As
     }
 
 		for ( unsigned int bin = 0; bin < obs.getNrBins(); bin++ ) {
-      samplesPerBin->at((period * obs.getNrBins() * pad(2, obs.getPadding())) + (bin * pad(2, obs.getPadding()))) = itemsPerBin[bin];
-      samplesPerBin->at((period * obs.getNrBins() * pad(2, obs.getPadding())) + (bin * pad(2, obs.getPadding())) + 1) = offset;
+      samplesPerBin->at((period * obs.getNrBins() * isa::utils::pad(2, obs.getPadding())) + (bin * isa::utils::pad(2, obs.getPadding()))) = itemsPerBin[bin];
+      samplesPerBin->at((period * obs.getNrBins() * isa::utils::pad(2, obs.getPadding())) + (bin * isa::utils::pad(2, obs.getPadding())) + 1) = offset;
       offset += itemsPerBin[bin];
     }
 	}
