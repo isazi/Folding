@@ -47,11 +47,17 @@ template< typename T > void folding(const unsigned int second, const Observation
 
 		for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
 			const unsigned int pCounter = counters[(periodIndex * observation.getNrPaddedBins()) + bin];
+      const unsigned int mySamples = samplesPerBin->at((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) * (bin * isa::utils::pad(2, observation.getPadding())));
+      const unsigned int myOffset = samplesPerBin->();
+
+      if ( mySamples == 0 ) {
+        continue;
+      }
 
 			for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
 				T foldedSample = 0;
 				unsigned int foldedCounter = 0;
-				unsigned int sample = samplesPerBin->at((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding()) + (bin * isa::utils::pad(2, observation.getPadding())) + 1)) + ((pCounter / samplesPerBin->at((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())))) * periodValue) + (pCounter % samplesPerBin->at((periodIndex * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))));
+				unsigned int sample = myOffset + ((pCounter / mySamples) * periodValue) + (pCounter % mySamples);
 
 				if ( (sample / observation.getNrSamplesPerSecond()) == second ) {
 					sample %= observation.getNrSamplesPerSecond();
@@ -60,8 +66,8 @@ template< typename T > void folding(const unsigned int second, const Observation
 					foldedSample += samples[(sample * observation.getNrPaddedDMs()) + dm];
 					foldedCounter++;
 
-					if ( (foldedCounter + pCounter) % samplesPerBin->at((periodIndex * observation.getNrPaddedBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) == 0 ) {
-						sample += periodValue - (samplesPerBin->at((periodIndex * observation.getNrPaddedBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) - 1);
+					if ( (foldedCounter + pCounter) % mySamples == 0 ) {
+						sample += periodValue - (mySamples - 1);
 					} else {
 						sample++;
 					}
