@@ -49,10 +49,10 @@ using PulsarSearch::getNrSamplesPerBin;
 
 typedef float dataType;
 const string typeName("float");
-const unsigned int padding = 32;
 
 
 int main(int argc, char *argv[]) {
+  bool print = false;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
 	long long unsigned int wrongValues = 0;
@@ -69,7 +69,8 @@ int main(int argc, char *argv[]) {
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
 		
-    observation.setPadding(padding);
+    print = args.getSwitch("-print");
+    observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
     observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
@@ -177,13 +178,17 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		if ( wrongValuesBin > 0 ) {
+		if ( wrongValuesBin > 0 && print ) {
 			cout << "Wrong samples bin " << bin << ": " << wrongValuesBin << " (" << (wrongValuesBin * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods()) << "%)." << endl;
 		}
 	}
 
 	cout << endl;
-	cout << "Wrong samples: " << wrongValues << " (" << (wrongValues * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrBins()) << "%)." << endl;
+  if ( wrongValues > 0 ) {
+  	cout << "Wrong samples: " << wrongValues << " (" << (wrongValues * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrBins()) << "%)." << endl;
+  } else {
+    cout << "TEST PASSED." << endl;
+  }
 	cout << endl;
 
 	return 0;
