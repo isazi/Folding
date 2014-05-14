@@ -138,14 +138,18 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		if ( wrongValuesBin > 0 ) {
+		if ( wrongValuesBin > 0 && print ) {
 			cout << "Wrong samples bin " << bin << ": " << wrongValuesBin << " (" << (wrongValuesBin * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods()) << "%)." << endl;
 		}
 	}
 
-	cout << endl;
-	cout << "Wrong samples: " << wrongValues << " (" << (wrongValues * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrBins()) << "%)." << endl;
-	cout << endl;
+  cout << endl;
+  if ( wrongValues > 0 ) {
+  	cout << "Wrong samples: " << wrongValues << " (" << (wrongValues * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrBins()) << "%)." << endl;
+  } else {
+    cout << "TEST PASSED." << endl;
+  }
+  cout << endl;
 
 	return 0;
 }
