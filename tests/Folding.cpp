@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 		writeCounterData->copyHostToDevice();
 		nrSamplesPerBin->allocateDeviceData();
 		nrSamplesPerBin->copyHostToDevice();
-	} catch ( OpenCLError err ) {
+	} catch ( OpenCLError &err ) {
 		cerr << err.what() << endl;
 		return 1;
 	}
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
 		dedispersedData->copyHostToDevice();
 		clFold(0, dedispersedData, foldedData, readCounterData, writeCounterData);
 		foldedData->copyDeviceToHost();
-	} catch ( OpenCLError err ) {
+	} catch ( OpenCLError &err ) {
 		cerr << err.what() << endl;
 		return 1;
 	}
