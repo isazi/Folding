@@ -50,7 +50,6 @@ using PulsarSearch::getNrSamplesPerBin;
 
 typedef float dataType;
 const string typeName("float");
-const unsigned int padding = 8;
 
 
 int main(int argc, char *argv[]) {
@@ -69,7 +68,7 @@ int main(int argc, char *argv[]) {
 
 		print = args.getSwitch("-print");
 
-		observation.setPadding(padding);
+		observation.setPadding(args.getSwitchArgument< unsigned int >("-passing"));
 		observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
