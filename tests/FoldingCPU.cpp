@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
 		print = args.getSwitch("-print");
 
 		observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
+    observation.setNrSeconds(args.getSwitchArgument< unsigned int >("-seconds"));
 		observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
@@ -81,8 +82,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Allocate memory
-	dedispersedData->allocateHostData(observation.getNrSamplesPerSecond() * observation.getNrPaddedDMs());
-	dedispersedDataTraditional->allocateHostData(observation.getNrDMs() * observation.getNrSamplesPerPaddedSecond());
+  std::vector< std::vector< dataType > * > hostDataBucket(observation.getNrSeconds());
+  std::vector< std::vector< dataType > * > hostDataBucketTraditional(observation.getNrSeconds());
+  for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
+    hostDataBucket[second] = new std::vector< dataType >(observation.getNrSamplesPerSecond() * observation.getNrPaddedDMs());
+    hostDataBucketTraditional[second] = new std::vector< dataType >(observation.getNrDMs() * observation.getNrSamplesPerPaddedSecond());
+  }
 	foldedDataCPU->allocateHostData(observation.getNrPaddedDMs() * observation.getNrBins() * observation.getNrPeriods());
 	foldedDataCPU->blankHostData();
 	foldedDataTraditional->allocateHostData(observation.getNrDMs() * observation.getNrPaddedBins() * observation.getNrPeriods());
@@ -93,58 +98,35 @@ int main(int argc, char *argv[]) {
 	counterDataTraditional->blankHostData();
 
 	srand(time(NULL));
-	for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
-		for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
-			dedispersedData->setHostDataItem((sample * observation.getNrPaddedDMs()) + DM, rand() % 100);
-			dedispersedDataTraditional->setHostDataItem((DM * observation.getNrSamplesPerPaddedSecond()) + sample, dedispersedData->getHostDataItem((sample * observation.getNrPaddedDMs()) + DM));
-		}
-	}
+  for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
+    for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
+      for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
+        (hostDataBucket[second])->at((sample * observation.getNrPaddedDMs()) + DM) = static_cast< dataType >(rand() % 100);
+        (hostDataBucketTraditional[second])->at((DM * observation.getNrSamplesPerPaddedSecond()) + sample) = (hostDataBucket[second])->at((sample * observation.getNrPaddedDMs()) + DM);
+      }
+    }
+  }
 
 	// Test & Check
-	folding(0, observation, dedispersedData->getHostData(), foldedDataCPU->getHostData(), counterData->getHostData());
-	traditionalFolding(0, observation, dedispersedDataTraditional->getHostData(), foldedDataTraditional->getHostData(), counterDataTraditional->getHostData());
-	if ( print ) {
-		for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
-			for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
-				for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
-					cout << foldedDataCPU->getHostDataItem((bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + DM) << "-" << counterData->getHostDataItem((period * observation.getNrPaddedBins()) + bin) << " ";
-				}
-				cout << endl;
-			}
-			cout << endl;
-		}
-		cout << endl;
-		for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
-			for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
-				for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
-					cout << foldedDataTraditional->getHostDataItem((((DM * observation.getNrPeriods()) + period) * observation.getNrPaddedBins()) + bin) << "-" << counterDataTraditional->getHostDataItem((((DM * observation.getNrPeriods()) + period) * observation.getNrPaddedBins()) + bin) << " ";
-				}
-				cout << endl;
-			}
-			cout << endl;
-		}
-		cout << endl;
-	}
-	for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
-		long long unsigned int wrongValuesBin = 0;
+  for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
+    folding(0, observation, dedispersedData->getHostData(), foldedDataCPU->getHostData(), counterData->getHostData());
+    traditionalFolding(0, observation, dedispersedDataTraditional->getHostData(), foldedDataTraditional->getHostData(), counterDataTraditional->getHostData());
+    for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
+      long long unsigned int wrongValuesBin = 0;
 
-		for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
-			for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
-				if ( !same(foldedDataCPU->getHostDataItem((bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + DM), foldedDataTraditional->getHostDataItem((((DM * observation.getNrPeriods()) + period) * observation.getNrPaddedBins()) + bin)) ) {
-					wrongValues++;
-					wrongValuesBin++;
-				}
-			}
-		}
-
-		if ( wrongValuesBin > 0 && print ) {
-			cout << "Wrong samples bin " << bin << ": " << wrongValuesBin << " (" << (wrongValuesBin * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods()) << "%)." << endl;
-		}
+      for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
+        for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
+          if ( !same(foldedDataCPU->getHostDataItem((bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + DM), foldedDataTraditional->getHostDataItem((((DM * observation.getNrPeriods()) + period) * observation.getNrPaddedBins()) + bin)) ) {
+            wrongValues++;
+            wrongValuesBin++;
+          }
+        }
+      }
+    }
 	}
 
-  cout << endl;
   if ( wrongValues > 0 ) {
-  	cout << "Wrong samples: " << wrongValues << " (" << (wrongValues * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrBins()) << "%)." << endl;
+  	cout << "Wrong samples: " << wrongValues << " (" << (wrongValues * 100) / (static_cast< long long unsigned int >(observation.getNrSeconds()) * observation.getNrDMs() * observation.getNrPeriods() * observation.getNrBins()) << "%)." << endl;
   } else {
     cout << "TEST PASSED." << endl;
   }
