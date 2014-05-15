@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
 		print = args.getSwitch("-print");
 
-		observation.setPadding(args.getSwitchArgument< unsigned int >("-passing"));
+		observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
 		observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
