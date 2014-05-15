@@ -106,8 +106,8 @@ int main(int argc, char *argv[]) {
 
 	// Test & Check
   for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
-    dedispersedData->allocateHostData(hostDataBucket[second]);
-    dedispersedDataTraditional->allocateHostData(hostDataBucketTraditional[second]);
+    dedispersedData->allocateHostData(*hostDataBucket[second]);
+    dedispersedDataTraditional->allocateHostData(*hostDataBucketTraditional[second]);
     folding(0, observation, dedispersedData->getHostData(), foldedDataCPU->getHostData(), counterData->getHostData());
     traditionalFolding(0, observation, dedispersedDataTraditional->getHostData(), foldedDataTraditional->getHostData(), counterDataTraditional->getHostData());
     for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
