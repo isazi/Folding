@@ -6,16 +6,16 @@ include		../Makefile.inc
 all: clean FoldingCPU FoldingAVX Folding
 
 Folding: Folding.cpp
-	$(LINKER) -o $(PROJ_BASE)/bin/FoldingTest Folding.cpp $(UTILS_SRC) $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
+	$(LINKER) -o $(PROJ_BASE)/bin/FoldingTest Folding.cpp $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
 
 FoldingAVX: FoldingAVX.cpp
-	$(INTELCXX) -o $(PROJ_BASE)/bin/FoldingAVXTest FoldingAVX.cpp $(UTILS_SRC) $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
+	$(INTELCXX) -o $(PROJ_BASE)/bin/FoldingAVXTest FoldingAVX.cpp $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
 
 FoldingCPU: FoldingCPU.cpp
-	$(LINKER) -o $(PROJ_BASE)/bin/FoldingCPUTest FoldingCPU.cpp $(UTILS_SRC) $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
+	$(LINKER) -o $(PROJ_BASE)/bin/FoldingCPUTest FoldingCPU.cpp $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
 
 Bins: Bins.cpp
-	$(LINKER) -o $(PROJ_BASE)/bin/BinsTest Bins.cpp $(UTILS_SRC) $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
+	$(LINKER) -o $(PROJ_BASE)/bin/BinsTest Bins.cpp $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
 
 clean:
 	rm -f $(PROJ_BASE)/bin/FoldingTest
