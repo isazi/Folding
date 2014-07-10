@@ -70,19 +70,19 @@ template< typename T > Folding< T >::Folding(std::string name, std::string dataT
 
 template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions::OpenCLError) {
 	// Begin kernel's template
-	std::string nrSamplesPerSecond_s = isa::utils::toStringValue< unsigned int >(observation->getNrSamplesPerSecond());
-	std::string nrPaddedDMs_s  = isa::utils::toStringValue< unsigned int >(observation->getNrPaddedDMs());
-	std::string nrPeriods_s = isa::utils::toStringValue< unsigned int >(observation->getNrPeriods());
-	std::string firstPeriod_s = isa::utils::toStringValue< unsigned int >(observation->getFirstPeriod());
-	std::string periodStep_s = isa::utils::toStringValue< unsigned int >(observation->getPeriodStep());
-	std::string nrBins_s = isa::utils::toStringValue< unsigned int >(observation->getNrBins());
-	std::string nrPaddedBins_s = isa::utils::toStringValue< unsigned int >(observation->getNrPaddedBins());
-	std::string nrDMsPerBlock_s = isa::utils::toStringValue< unsigned int >(nrDMsPerBlock);
-	std::string nrDMsPerThread_s = isa::utils::toStringValue< unsigned int >(nrDMsPerThread);
-	std::string nrPeriodsPerBlock_s = isa::utils::toStringValue< unsigned int >(nrPeriodsPerBlock);
-	std::string nrPeriodsPerThread_s = isa::utils::toStringValue< unsigned int >(nrPeriodsPerThread);
-	std::string nrBinsPerBlock_s = isa::utils::toStringValue< unsigned int >(nrBinsPerBlock);
-	std::string nrBinsPerThread_s = isa::utils::toStringValue< unsigned int >(nrBinsPerThread);
+	std::string nrSamplesPerSecond_s = isa::utils::toString< unsigned int >(observation->getNrSamplesPerSecond());
+	std::string nrPaddedDMs_s  = isa::utils::toString< unsigned int >(observation->getNrPaddedDMs());
+	std::string nrPeriods_s = isa::utils::toString< unsigned int >(observation->getNrPeriods());
+	std::string firstPeriod_s = isa::utils::toString< unsigned int >(observation->getFirstPeriod());
+	std::string periodStep_s = isa::utils::toString< unsigned int >(observation->getPeriodStep());
+	std::string nrBins_s = isa::utils::toString< unsigned int >(observation->getNrBins());
+	std::string nrPaddedBins_s = isa::utils::toString< unsigned int >(observation->getNrPaddedBins());
+	std::string nrDMsPerBlock_s = isa::utils::toString< unsigned int >(nrDMsPerBlock);
+	std::string nrDMsPerThread_s = isa::utils::toString< unsigned int >(nrDMsPerThread);
+	std::string nrPeriodsPerBlock_s = isa::utils::toString< unsigned int >(nrPeriodsPerBlock);
+	std::string nrPeriodsPerThread_s = isa::utils::toString< unsigned int >(nrPeriodsPerThread);
+	std::string nrBinsPerBlock_s = isa::utils::toString< unsigned int >(nrBinsPerBlock);
+	std::string nrBinsPerThread_s = isa::utils::toString< unsigned int >(nrBinsPerThread);
 
 	delete this->code;
 	this->code = new std::string();
@@ -102,8 +102,8 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 
 	std::string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
 
-	std::string samplesPerBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toStringValue(observation->getNrBins() * isa::utils::pad(2, observation->getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toStringValue(isa::utils::pad(2, observation->getPadding())) + ")];\n"
-		"const unsigned int offsetp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toStringValue(observation->getNrBins() * isa::utils::pad(2, observation->getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toStringValue(isa::utils::pad(2, observation->getPadding())) + ") + 1];\n"
+	std::string samplesPerBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation->getNrBins() * isa::utils::pad(2, observation->getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation->getPadding())) + ")];\n"
+		"const unsigned int offsetp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation->getNrBins() * isa::utils::pad(2, observation->getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation->getPadding())) + ") + 1];\n"
 		"const unsigned int pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = readCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>];\n";
 
 	std::string defsTemplate = "unsigned int foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
@@ -139,7 +139,7 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 	std::string * computes = new std::string();
 	std::string * stores = new std::string();
 	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
-		std::string DM_s = isa::utils::toStringValue< unsigned int >(DM);
+		std::string DM_s = isa::utils::toString< unsigned int >(DM);
 		std::string * temp = 0;
 
 		temp = isa::utils::replace(&defsDMTemplate, "<%DM_NUM%>", DM_s);
@@ -147,7 +147,7 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 		delete temp;
 	}
 	for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
-		std::string period_s = isa::utils::toStringValue< unsigned int >(period);
+		std::string period_s = isa::utils::toString< unsigned int >(period);
 		std::string * temp = 0;
 
 		temp = isa::utils::replace(&defsPeriodTemplate, "<%PERIOD_NUM%>", period_s);
@@ -155,7 +155,7 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 		delete temp;
 	}
 	for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
-		std::string bin_s = isa::utils::toStringValue< unsigned int >(bin);
+		std::string bin_s = isa::utils::toString< unsigned int >(bin);
 		std::string * temp = 0;
 
 		temp = isa::utils::replace(&defsBinTemplate, "<%BIN_NUM%>", bin_s);
@@ -163,10 +163,10 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 		delete temp;
 	}
 	for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
-		std::string period_s = isa::utils::toStringValue< unsigned int >(period);
+		std::string period_s = isa::utils::toString< unsigned int >(period);
 
 		for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
-      std::string bin_s = isa::utils::toStringValue< unsigned int >(bin);
+      std::string bin_s = isa::utils::toString< unsigned int >(bin);
 			std::string * temp = 0;
 
 			temp = isa::utils::replace(&samplesPerBinTemplate, "<%BIN_NUM%>", bin_s);
@@ -176,13 +176,13 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 		}
 	}
 	for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
-    std::string bin_s = isa::utils::toStringValue< unsigned int >(bin);
+    std::string bin_s = isa::utils::toString< unsigned int >(bin);
 
 		for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
-      std::string period_s = isa::utils::toStringValue< unsigned int >(period);
+      std::string period_s = isa::utils::toString< unsigned int >(period);
 
 			for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
-        std::string DM_s = isa::utils::toStringValue< unsigned int >(DM);
+        std::string DM_s = isa::utils::toString< unsigned int >(DM);
 				std::string * temp = 0;
 
 				temp = isa::utils::replace(&defsTemplate, "<%BIN_NUM%>", bin_s);
@@ -200,13 +200,13 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 		}
 	}
 	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
-    std::string DM_s = isa::utils::toStringValue< unsigned int >(DM);
+    std::string DM_s = isa::utils::toString< unsigned int >(DM);
 
 		for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
-        std::string bin_s = isa::utils::toStringValue< unsigned int >(bin);
+        std::string bin_s = isa::utils::toString< unsigned int >(bin);
 
 				for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
-        std::string period_s = isa::utils::toStringValue< unsigned int >(period);
+        std::string period_s = isa::utils::toString< unsigned int >(period);
 				std::string * temp = 0;
 
 				temp = isa::utils::replace(&computeTemplate, "<%BIN_NUM%>", bin_s);
