@@ -75,7 +75,6 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 	std::string nrPeriods_s = isa::utils::toString< unsigned int >(observation->getNrPeriods());
 	std::string firstPeriod_s = isa::utils::toString< unsigned int >(observation->getFirstPeriod());
 	std::string periodStep_s = isa::utils::toString< unsigned int >(observation->getPeriodStep());
-	std::string nrBins_s = isa::utils::toString< unsigned int >(observation->getNrBins());
 	std::string nrPaddedBins_s = isa::utils::toString< unsigned int >(observation->getNrPaddedBins());
 	std::string nrDMsPerBlock_s = isa::utils::toString< unsigned int >(nrDMsPerBlock);
 	std::string nrDMsPerThread_s = isa::utils::toString< unsigned int >(nrDMsPerThread);
