@@ -108,8 +108,8 @@ int main(int argc, char *argv[]) {
   for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
     dedispersedData->allocateHostData(*hostDataBucket[second]);
     dedispersedDataTraditional->allocateHostData(*hostDataBucketTraditional[second]);
-    folding(0, observation, dedispersedData->getHostData(), foldedDataCPU->getHostData(), counterData->getHostData());
-    traditionalFolding(0, observation, dedispersedDataTraditional->getHostData(), foldedDataTraditional->getHostData(), counterDataTraditional->getHostData());
+    folding(second, observation, dedispersedData->getHostData(), foldedDataCPU->getHostData(), counterData->getHostData());
+    traditionalFolding(second, observation, dedispersedDataTraditional->getHostData(), foldedDataTraditional->getHostData(), counterDataTraditional->getHostData());
     for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
       for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
         for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
