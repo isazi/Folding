@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-	// Test & Check
+  // Test & Check
   for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
     dedispersedData->allocateHostData(*hostDataBucket[second]);
     dedispersedDataTraditional->allocateHostData(*hostDataBucketTraditional[second]);
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-	}
+  }
 
   if ( wrongValues > 0 ) {
   	cout << "Wrong samples: " << wrongValues << " (" << (wrongValues * 100) / (static_cast< long long unsigned int >(observation.getNrSeconds()) * observation.getNrDMs() * observation.getNrPeriods() * observation.getNrBins()) << "%)." << endl;
