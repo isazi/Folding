@@ -52,7 +52,6 @@ const string typeName("float");
 
 
 int main(int argc, char *argv[]) {
-  bool print = false;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
   unsigned int nrDMsPerBlock = 0;
@@ -75,7 +74,6 @@ int main(int argc, char *argv[]) {
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
 		
-    print = args.getSwitch("-print");
     observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
     nrDMsPerBlock = args.getSwitchArgument< unsigned int >("-db");
     nrPeriodsPerBlock = args.getSwitchArgument< unsigned int >("-pb");
@@ -178,24 +176,16 @@ int main(int argc, char *argv[]) {
 	CPUCounter->blankHostData();
 	folding(0, observation, dedispersedData->getHostData(), CPUFolded->getHostData(), CPUCounter->getHostData());
 	for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
-		long long unsigned int wrongValuesBin = 0;
-
 		for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
 			for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
 				const unsigned int dataItem = (bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + DM;
 				if ( !same(CPUFolded->getHostDataItem(dataItem), foldedData->getHostDataItem(dataItem)) ) {
 					wrongValues++;
-					wrongValuesBin++;
 				}
 			}
 		}
-
-		if ( wrongValuesBin > 0 && print ) {
-			cout << "Wrong samples bin " << bin << ": " << wrongValuesBin << " (" << (wrongValuesBin * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods()) << "%)." << endl;
-		}
 	}
 
-	cout << endl;
   if ( wrongValues > 0 ) {
   	cout << "Wrong samples: " << wrongValues << " (" << (wrongValues * 100) / (static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrBins()) << "%)." << endl;
   } else {
