@@ -55,6 +55,12 @@ int main(int argc, char *argv[]) {
   bool print = false;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
+  unsigned int nrDMsPerBlock = 0;
+  unsigned int nrPeriodsPerBlock = 0;
+  unsigned int nrBinsPerBlock = 0;
+  unsigned int nrDMsPerThread = 0;
+  unsigned int nrPeriodsPerThread = 0;
+  unsigned int nrBinsPerThread = 0;
 	long long unsigned int wrongValues = 0;
 	Observation< dataType > observation("FoldingTest", typeName);
 	CLData< dataType > * dedispersedData = new CLData< dataType >("DedispersedData", true);
@@ -71,6 +77,12 @@ int main(int argc, char *argv[]) {
 		
     print = args.getSwitch("-print");
     observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
+    nrDMsPerBlock = args.getSwitchArgument< unsigned int >("-db");
+    nrPeriodsPerBlock = args.getSwitchArgument< unsigned int >("-pb");
+    nrBinsPerBlock = args.getSwitchArgument< unsigned int >("-bb");
+    nrDMsPerThread = args.getSwitchArgument< unsigned int >("-dt");
+    nrPeriodsPerThread = args.getSwitchArgument< unsigned int >("-pt");
+    nrBinsPerThread = args.getSwitchArgument< unsigned int >("-bt");
     observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
 		observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
@@ -142,12 +154,12 @@ int main(int argc, char *argv[]) {
 		clFold.bindOpenCL(clContext, &(clDevices->at(clDeviceID)), &((clQueues->at(clDeviceID)).at(0)));
 		clFold.setObservation(&observation);
 		clFold.setNrSamplesPerBin(nrSamplesPerBin);
-		clFold.setNrDMsPerBlock(128);
-		clFold.setNrPeriodsPerBlock(2);
-		clFold.setNrBinsPerBlock(1);
-		clFold.setNrDMsPerThread(2);
-		clFold.setNrPeriodsPerThread(2);
-		clFold.setNrBinsPerThread(4);
+		clFold.setNrDMsPerBlock(nrDMsPerBlock);
+		clFold.setNrPeriodsPerBlock(nrPeriodsPerBlock);
+		clFold.setNrBinsPerBlock(nrBinsPerBlock);
+		clFold.setNrDMsPerThread(nrDMsPerThread);
+		clFold.setNrPeriodsPerThread(nrPeriodsPerThread);
+		clFold.setNrBinsPerThread(nrBinsPerThread);
 		clFold.generateCode();
 
 		dedispersedData->copyHostToDevice();
