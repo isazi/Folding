@@ -191,7 +191,6 @@ int main(int argc, char *argv[]) {
   } else {
     cout << "TEST PASSED." << endl;
   }
-	cout << endl;
 
 	return 0;
 }
