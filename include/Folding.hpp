@@ -12,17 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#define __CL_ENABLE_EXCEPTIONS
-#include <CL/cl.hpp>
 #include <string>
 #include <vector>
-#include <cmath>
-#include <cstring>
+#include <x86intrin.h>
 
-#include <Exceptions.hpp>
-#include <CLData.hpp>
 #include <utils.hpp>
-#include <Kernel.hpp>
 #include <Observation.hpp>
 
 
@@ -31,45 +25,41 @@
 
 namespace PulsarSearch {
 
+// Sequential folding
+template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters);
 // OpenCL folding algorithm
-template< typename T > class Folding : public isa::OpenCL::Kernel< T > {
-public:
-	Folding(std::string name, std::string dataType);
-
-	void generateCode() throw (isa::Exceptions::OpenCLError);
-	void operator()(unsigned int second, isa::OpenCL::CLData< T > * input, isa::OpenCL::CLData< T > * output, isa::OpenCL::CLData< unsigned int > * readCounters, isa::OpenCL::CLData< unsigned int > * writeCounters) throw (isa::Exceptions::OpenCLError);
-
-	inline void setNrDMsPerBlock(unsigned int DMs);
-	inline void setNrPeriodsPerBlock(unsigned int periods);
-	inline void setNrBinsPerBlock(unsigned int bins);
-
-	inline void setNrDMsPerThread(unsigned int DMs);
-	inline void setNrPeriodsPerThread(unsigned int periods);
-	inline void setNrBinsPerThread(unsigned int bins);
-
-	inline void setObservation(AstroData::Observation< T > * obs);
-	inline void setNrSamplesPerBin(isa::OpenCL::CLData< unsigned int > * samplesPerBin);
-
-private:
-	unsigned int nrDMsPerBlock;
-	unsigned int nrPeriodsPerBlock;
-	unsigned int nrBinsPerBlock;
-	unsigned int nrDMsPerThread;
-	unsigned int nrPeriodsPerThread;
-	unsigned int nrBinsPerThread;
-	cl::NDRange globalSize;
-	cl::NDRange localSize;
-
-	AstroData::Observation< T > * observation;
-	isa::OpenCL::CLData< unsigned int > * nrSamplesPerBin;
-};
+template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, std::string & dataType, const AstroData::Observation< T > & observation);
 
 
-// Implementation
-template< typename T > Folding< T >::Folding(std::string name, std::string dataType) : isa::OpenCL::Kernel< T >(name, dataType), nrDMsPerBlock(0), nrPeriodsPerBlock(0), nrBinsPerBlock(0), nrDMsPerThread(0), nrPeriodsPerThread(0), nrBinsPerThread(0), globalSize(cl::NDRange(1, 1, 1)), localSize(cl::NDRange(1, 1, 1)), observation(0), nrSamplesPerBin(0) {}
+// Implementations
+template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters) {
+  for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
+    for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex++ ) {
+      const unsigned int periodValue = observation.getFirstPeriod() + (periodIndex * observation.getPeriodStep());
 
-template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions::OpenCLError) {
-	// Begin kernel's template
+      for ( unsigned int globalSample = 0; globalSample < observation.getNrSamplesPerSecond(); globalSample++ ) {
+        const unsigned int sample = (second * observation.getNrSamplesPerSecond()) + globalSample;
+        const float phase = (sample / static_cast< float >(periodValue)) - (sample / periodValue);
+        const unsigned int bin = static_cast< unsigned int >(phase * static_cast< float >(observation.getNrBins()));
+        const unsigned int globalItem = (((dm * observation.getNrPeriods()) + periodIndex) * observation.getNrPaddedBins()) + bin;
+
+        const T pValue = bins[globalItem];
+        T cValue = samples[(dm * observation.getNrSamplesPerPaddedSecond()) + globalSample];
+        const unsigned int pCounter = counters[globalItem];
+        unsigned int cCounter = pCounter + 1;
+
+        if ( pCounter != 0 ) {
+          cValue = pValue + ((cValue - pValue) / cCounter);
+        }
+        bins[globalItem] = cValue;
+        counters[globalItem] = cCounter;
+      }
+    }
+  }
+}
+
+template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, std::string & dataType, const AstroData::Observation< T > & observation) {
+  std::string * code = new std::string();
 	std::string nrSamplesPerSecond_s = isa::utils::toString< unsigned int >(observation->getNrSamplesPerSecond());
 	std::string nrPaddedDMs_s  = isa::utils::toString< unsigned int >(observation->getNrPaddedDMs());
 	std::string nrPeriods_s = isa::utils::toString< unsigned int >(observation->getNrPeriods());
@@ -83,9 +73,8 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 	std::string nrBinsPerBlock_s = isa::utils::toString< unsigned int >(nrBinsPerBlock);
 	std::string nrBinsPerThread_s = isa::utils::toString< unsigned int >(nrBinsPerThread);
 
-	delete this->code;
-	this->code = new std::string();
-	*(this->code) = "__kernel void " + this->name + "(const unsigned int second, __global const " + this->dataType + " * const restrict samples, __global " + this->dataType + " * const restrict bins, __global const unsigned int * const restrict readCounters, __global unsigned int * const restrict writeCounters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
+	// Begin kernel's template
+	*code = "__kernel void folding(const unsigned int second, __global const " + dataType + " * const restrict samples, __global " + dataType + " * const restrict bins, __global const unsigned int * const restrict readCounters, __global unsigned int * const restrict writeCounters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
     "<%DEFS%>"
     "\n"
     "unsigned int sample = 0;"
@@ -97,7 +86,7 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 	std::string defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
 
 	std::string defsPeriodTemplate = "const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + nrPeriodsPerBlock_s + " * " + nrPeriodsPerThread_s+  ") + get_local_id(1) + (<%PERIOD_NUM%> * " + nrPeriodsPerBlock_s + ");\n"
-      "const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n";
+    "const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n";
 
 	std::string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
 
@@ -106,7 +95,7 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 		"const unsigned int pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = readCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>];\n";
 
 	std::string defsTemplate = "unsigned int foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
-		+ this->dataType + " foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
+		+ dataType + " foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
 
 	std::string computeTemplate = "if ( samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
     "sample = offsetp<%PERIOD_NUM%>b<%BIN_NUM%> + ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
@@ -126,7 +115,7 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 
 	std::string storeTemplate = "if ( foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
     "const unsigned int outputItem = (bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
-    "const "+ this->dataType + " pValue = bins[outputItem];\n"
+    "const "+ dataType + " pValue = bins[outputItem];\n"
     "float addedFraction = convert_float(foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>) / (foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
     "foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> /= foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
     "writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
@@ -216,62 +205,14 @@ template< typename T > void Folding< T >::generateCode() throw (isa::Exceptions:
 			}
 		}
 	}
-	this->code = isa::utils::replace(this->code, "<%DEFS%>", *defs, true);
-	this->code = isa::utils::replace(this->code, "<%COMPUTE%>", *computes, true);
-	this->code = isa::utils::replace(this->code, "<%STORE%>", *stores, true);
+	code = isa::utils::replace(code, "<%DEFS%>", *defs, true);
+	code = isa::utils::replace(code, "<%COMPUTE%>", *computes, true);
+	code = isa::utils::replace(code, "<%STORE%>", *stores, true);
 	delete defs;
 	delete computes;
 	delete stores;
 
-	globalSize = cl::NDRange(observation->getNrPaddedDMs() / nrDMsPerThread, observation->getNrPeriods() / nrPeriodsPerThread, observation->getNrBins() / nrBinsPerThread);
-	localSize = cl::NDRange(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock);
-
-	this->gflop = isa::utils::giga(static_cast< long long unsigned int >(observation->getNrDMs()) * observation->getNrPeriods() * observation->getNrSamplesPerSecond());
-
-	this->compile();
-}
-
-template< typename T > void Folding< T >::operator()(unsigned int second, isa::OpenCL::CLData< T > * input, isa::OpenCL::CLData< T > * output, isa::OpenCL::CLData< unsigned int > * readCounters, isa::OpenCL::CLData< unsigned int > * writeCounters) throw (isa::Exceptions::OpenCLError) {
-	this->setArgument(0, second);
-	this->setArgument(1, *(input->getDeviceData()));
-	this->setArgument(2, *(output->getDeviceData()));
-	this->setArgument(3, *(readCounters->getDeviceData()));
-	this->setArgument(4, *(writeCounters->getDeviceData()));
-	this->setArgument(5, *(nrSamplesPerBin->getDeviceData()));
-
-	this->run(globalSize, localSize);
-}
-
-template< typename T > inline void Folding< T >::setNrDMsPerBlock(unsigned int DMs) {
-	nrDMsPerBlock = DMs;
-}
-
-template< typename T > inline void Folding< T >::setNrPeriodsPerBlock(unsigned int periods) {
-	nrPeriodsPerBlock = periods;
-}
-
-template< typename T > inline void Folding< T >::setNrBinsPerBlock(unsigned int bins) {
-	nrBinsPerBlock = bins;
-}
-
-template< typename T > inline void Folding< T >::setNrDMsPerThread(unsigned int DMs) {
-	nrDMsPerThread = DMs;
-}
-
-template< typename T > inline void Folding< T >::setNrPeriodsPerThread(unsigned int periods) {
-	nrPeriodsPerThread = periods;
-}
-
-template< typename T > inline void Folding< T >::setNrBinsPerThread(unsigned int bins) {
-	nrBinsPerThread = bins;
-}
-
-template< typename T > inline void Folding< T >::setObservation(AstroData::Observation< T > * obs) {
-	observation = obs;
-}
-
-template< typename T > inline void Folding< T >::setNrSamplesPerBin(isa::OpenCL::CLData< unsigned int > * samplesPerBin) {
-	nrSamplesPerBin = samplesPerBin;
+  return code;
 }
 
 } // PulsarSearch
