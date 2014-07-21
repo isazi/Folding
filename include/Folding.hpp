@@ -14,6 +14,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <x86intrin.h>
 
 #include <utils.hpp>
@@ -29,6 +30,8 @@ namespace PulsarSearch {
 template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters);
 // OpenCL folding algorithm
 template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, std::string & dataType, const AstroData::Observation< T > & observation);
+// AVX folding algorithm
+std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread);
 
 
 // Implementations
@@ -212,6 +215,60 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
 	delete computes;
 	delete stores;
 
+  return code;
+}
+
+std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread) {
+  std::string * code = new std::string();
+
+  // Begin kernel's template
+  *code = "template< typename T > void foldingAVX" + isa::utils::toString< unsigned int >(nrDMsPerThread) + "x" + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + "x" + isa::utils::toString< unsigned int >(nrBinsPerThread) + "(const unsigned int second, const AstroData::Observation< T > & observation, const float * const __restrict__ samples, float * const __restrict__ bins, const unsigned int * const __restrict__ readCounters, unsigned int * const __restrict__ writeCounters, const unsigned int * const __restrict__ samplesPerBin) {\n"
+    "#pragma omp parallel for schedule(static)\n"
+    "for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex += " + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + ") {\n"
+    "<%PERIOD_VARS%>"
+    "\n"
+    "#pragma omp parallel for schedule(static)\n"
+		"for ( unsigned int bin = 0; bin < observation.getNrBins(); bin += " + isa::utils::toString< unsigned int >(nrBinsPerThread) + ") {\n"
+    "<%BIN_VARS%>"
+    "\n"
+    "#pragma omp parallel for schedule(static)\n"
+    "for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm += 8 * " + isa::utils::toString< unsigned int >(nrDMsPerThread) + ") {\n"
+    "<%DM_VARS%>"
+    "<%COMPUTE%>"
+    "}\n"
+    "}\n"
+    "}\n"
+    "}\n";
+  std::string periodVarsTemplate = "const unsigned int periodValuep<%PERIOD_NUM%> = observation.getFirstPeriod() + ((periodIndex + <%PERIOD_NUM%>) * observation.getPeriodStep());\n";
+  std::string binVarsTemplate = "const unsigned int pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = readCounters[((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedBins()) + (bin + <%BIN_NUM%>)];\n"
+    "unsigned int foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
+    "unsigned int samplep<%PERIOD_NUM%>b<%BIN_NUM%>;\n";
+  std::string dmVarsTemplate = "__m256 foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = _mm256_setzero_ps();\n";
+  std::string computeTemplate = "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
+    "samplep<%PERIOD_NUM%>b<%BIN_NUM%> = samplesPerBin->at(((periodIndex + <%PERIOD_NUM%>) * 2 * observation.getNrPaddedBins()) + ((bin + <%BIN_NUM%>) * 2) + 1) + ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBin->at(((periodIndex + <%PERIOD_NUM%>) * 2 * observation.getNrPaddedBins()) + ((bin + <%BIN_NUM%>) * 2))) * periodValuep<%PERIOD_NUM%>) + (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBin->at(((periodIndex + <%PERIOD_NUM%>) * 2 * observation.getNrPaddedBins()) + ((bin + <%BIN_NUM%>) * 2)));\n"
+    "\n"
+    "if ( (samplep<%PERIOD_NUM%>b<%BIN_NUM%> / observation.getNrSamplesPerSecond()) == second ) {\n"
+    "samplep<%PERIOD_NUM%>b<%BIN_NUM%> %= observation.getNrSamplesPerSecond();\n"
+    "}\n"
+    "while ( samplep<%PERIOD_NUM%>b<%BIN_NUM%> < observation.getNrSamplesPerSecond() ) {\n"
+    "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = _mm256_add_ps(foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>, _mm256_loadu_ps(&(samples[(samplep<%PERIOD_NUM%>b<%BIN_NUM%> * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)])));\n"
+    "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
+    "\n"
+    "if ( (foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBin->at(((periodIndex + <%PERIOD_NUM%>) * 2 * observation.getNrPaddedBins()) + ((bin + <%BIN_NUM%>) * 2)) == 0 ) {\n"
+    "samplep<%PERIOD_NUM%>b<%BIN_NUM%> += periodValuep<%PERIOD_NUM%>;\n"
+    "} else {\n"
+    "samplep<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
+    "}\n"
+    "}\n"
+    "\n"
+    "if ( foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
+    "const __m256 pValue = _mm256_loadu_ps(&(bins[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]));\n"
+    "const __m256 cValue = _mm256_div_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>), pValue), _mm256_mul_ps(_mm256_set1_ps(), foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)), _mm256_add_ps(_mm256_set1_ps(pCounterp<%PERIOD_NUM%>n<%BIN_NUM%>), _mm256_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>)));\n"
+    "_mm256_storeu_ps(&((bin + <%BIN_NUM%>)s[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]), cValue)\n"
+    "writeCounters[((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedBins()) + (bin + <%BIN_NUM%>)] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
+    "}\n";
+  // End kernel's template
+  
   return code;
 }
 
