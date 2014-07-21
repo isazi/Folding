@@ -116,6 +116,7 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
     "}\n"
     "}\n";
 
+  // TODO: rewrite the formula like the AVX version
 	std::string storeTemplate = "if ( foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
     "const unsigned int outputItem = (bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
     "const "+ dataType + " pValue = bins[outputItem];\n"
@@ -129,6 +130,7 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
 	std::string * defs = new std::string();
 	std::string * computes = new std::string();
 	std::string * stores = new std::string();
+
 	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
 		std::string DM_s = isa::utils::toString< unsigned int >(DM);
 		std::string * temp = 0;
@@ -234,6 +236,7 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
     "#pragma omp parallel for schedule(static)\n"
     "for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm += 8 * " + isa::utils::toString< unsigned int >(nrDMsPerThread) + ") {\n"
     "<%DM_VARS%>"
+    "\n"
     "<%COMPUTE%>"
     "}\n"
     "}\n"
@@ -269,6 +272,50 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
     "}\n";
   // End kernel's template
   
+  std::string periodVars_s = new std::string();
+  std::string binVars_s = new std::string();
+  std::string dmVars_s = new std::string();
+  std::string compute_s = new std::string();
+
+  for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
+    std::string period_s = isa::utils::toString< unsigned int >(period);
+    string * temp = 0;
+
+    temp = isa::utils::replace(&periodVarsTemplate, "<%PERIOD_NUM%>", period_s);
+    periodVars_s.append(*temp);
+    delete temp;
+
+    for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
+      std::string bin_s = isa::utils::toString< unsigned int >(bin);
+      std::string * temp = 0;
+
+      temp = isa::utils::replace(&binVarsTemplate, "<%PERIOD_NUM%>", period_s);
+      temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
+      binVars_s.append(*temp);
+      delete temp;
+
+      for ( unsigned int dm = 0; dm < nrDMsPerThread; dm++ ) {
+        std::string dm_s = isa::utils::toString< unsigned int >(dm);
+        std::string * temp = 0;
+
+        temp = isa::utils::replace(&dmVarsTemplate, "<%PERIOD_NUM%>", period_s);
+        temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
+        temp = isa::utils::replace(temp, "<%DM_NUM%>", dm_s, true);
+        dmVars_s.append(*temp);
+        temp = isa::utils::replace(&computeTemplate, "<%PERIOD_NUM%>", period_s);
+        temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
+        temp = isa::utils::replace(temp, "<%DM_NUM%>", dm_s, true);
+        compute_s.append(*temp);
+        delete temp;
+      }
+    }
+  }
+
+  code = isa::utils::replace(code, "<%PERIOD_VARS%>", periodVars_s, true);
+  code = isa::utils::replace(code, "<%BIN_VARS%>", binVars_s, true);
+  code = isa::utils::replace(code, "<%DM_VARS%>", dmVars_s, true);
+  code = isa::utils::replace(code, "<%COMPUTE%>", compute_s, true);
+
   return code;
 }
 
