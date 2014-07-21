@@ -47,8 +47,8 @@ template< typename T > void folding(const unsigned int second, const Observation
         const unsigned int globalItem = (((dm * observation.getNrPeriods()) + periodIndex) * observation.getNrPaddedBins()) + bin;
 
         const T pValue = bins[globalItem];
-        T cValue = samples[(dm * observation.getNrSamplesPerPaddedSecond()) + globalSample];
         const unsigned int pCounter = counters[globalItem];
+        T cValue = samples[(dm * observation.getNrSamplesPerPaddedSecond()) + globalSample];
         unsigned int cCounter = pCounter + 1;
 
         if ( pCounter != 0 ) {
