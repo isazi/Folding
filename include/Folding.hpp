@@ -226,7 +226,8 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
   std::string * code = new std::string();
 
   // Begin kernel's template
-  *code = "template< typename T > void foldingAVX" + isa::utils::toString< unsigned int >(nrDMsPerThread) + "x" + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + "x" + isa::utils::toString< unsigned int >(nrBinsPerThread) + "(const unsigned int second, const AstroData::Observation< T > & observation, const float * const __restrict__ samples, float * const __restrict__ bins, const unsigned int * const __restrict__ readCounters, unsigned int * const __restrict__ writeCounters, const unsigned int * const __restrict__ samplesPerBin) {\n"
+  *code = "namespace PulsarSearch {\n"
+    "template< typename T > void foldingAVX" + isa::utils::toString< unsigned int >(nrDMsPerThread) + "x" + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + "x" + isa::utils::toString< unsigned int >(nrBinsPerThread) + "(const unsigned int second, const AstroData::Observation< T > & observation, const float * const __restrict__ samples, float * const __restrict__ bins, const unsigned int * const __restrict__ readCounters, unsigned int * const __restrict__ writeCounters, const unsigned int * const __restrict__ samplesPerBin) {\n"
     "#pragma omp parallel for schedule(static)\n"
     "for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex += " + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + ") {\n"
     "<%PERIOD_VARS%>"
@@ -240,6 +241,7 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
     "<%DM_VARS%>"
     "\n"
     "<%COMPUTE%>"
+    "}\n"
     "}\n"
     "}\n"
     "}\n"
@@ -325,7 +327,8 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
   std::string * code = new std::string();
 
   // Begin kernel's template
-  *code = "template< typename T > void foldingPhi" + isa::utils::toString< unsigned int >(nrDMsPerThread) + "x" + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + "x" + isa::utils::toString< unsigned int >(nrBinsPerThread) + "(const unsigned int second, const AstroData::Observation< T > & observation, const float * const __restrict__ samples, float * const __restrict__ bins, const unsigned int * const __restrict__ readCounters, unsigned int * const __restrict__ writeCounters, const unsigned int * const __restrict__ samplesPerBin) {\n"
+  *code = "namespace PulsarSearch {\n"
+    "template< typename T > void foldingPhi" + isa::utils::toString< unsigned int >(nrDMsPerThread) + "x" + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + "x" + isa::utils::toString< unsigned int >(nrBinsPerThread) + "(const unsigned int second, const AstroData::Observation< T > & observation, const float * const __restrict__ samples, float * const __restrict__ bins, const unsigned int * const __restrict__ readCounters, unsigned int * const __restrict__ writeCounters, const unsigned int * const __restrict__ samplesPerBin) {\n"
     "#pragma omp parallel for schedule(static)\n"
     "for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex += " + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + ") {\n"
     "<%PERIOD_VARS%>"
@@ -339,6 +342,7 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
     "<%DM_VARS%>"
     "\n"
     "<%COMPUTE%>"
+    "}\n"
     "}\n"
     "}\n"
     "}\n"
