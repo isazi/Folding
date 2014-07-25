@@ -260,7 +260,7 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
     "samplep<%PERIOD_NUM%>b<%BIN_NUM%> %= observation.getNrSamplesPerSecond();\n"
     "}\n"
     "while ( samplep<%PERIOD_NUM%>b<%BIN_NUM%> < observation.getNrSamplesPerSecond() ) {\n"
-    "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = _mm256_add_ps(foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>, _mm256_loadu_ps(&(samples[(samplep<%PERIOD_NUM%>b<%BIN_NUM%> * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)])));\n"
+    "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = _mm256_add_ps(foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>, _mm256_load_ps(&(samples[(samplep<%PERIOD_NUM%>b<%BIN_NUM%> * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)])));\n"
     "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
     "\n"
     "if ( (foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBin->at(((periodIndex + <%PERIOD_NUM%>) * 2 * observation.getNrPaddedBins()) + ((bin + <%BIN_NUM%>) * 2)) == 0 ) {\n"
@@ -271,9 +271,9 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
     "}\n"
     "\n"
     "if ( foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
-    "const __m256 pValue = _mm256_loadu_ps(&(bins[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]));\n"
+    "const __m256 pValue = _mm256_load_ps(&(bins[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]));\n"
     "const __m256 cValue = _mm256_div_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>), pValue), _mm256_mul_ps(_mm256_set1_ps(), foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)), _mm256_add_ps(_mm256_set1_ps(pCounterp<%PERIOD_NUM%>n<%BIN_NUM%>), _mm256_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>)));\n"
-    "_mm256_storeu_ps(&((bin + <%BIN_NUM%>)s[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]), cValue)\n"
+    "_mm256_store_ps(&((bin + <%BIN_NUM%>)s[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]), cValue)\n"
     "writeCounters[((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedBins()) + (bin + <%BIN_NUM%>)] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
     "}\n";
   // End kernel's template
@@ -361,7 +361,7 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
     "samplep<%PERIOD_NUM%>b<%BIN_NUM%> %= observation.getNrSamplesPerSecond();\n"
     "}\n"
     "while ( samplep<%PERIOD_NUM%>b<%BIN_NUM%> < observation.getNrSamplesPerSecond() ) {\n"
-    "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = _mm512_add_ps(foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>, _mm512_loadu_ps(&(samples[(samplep<%PERIOD_NUM%>b<%BIN_NUM%> * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)])));\n"
+    "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = _mm512_add_ps(foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>, _mm512_load_ps(&(samples[(samplep<%PERIOD_NUM%>b<%BIN_NUM%> * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)])));\n"
     "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
     "\n"
     "if ( (foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBin->at(((periodIndex + <%PERIOD_NUM%>) * 2 * observation.getNrPaddedBins()) + ((bin + <%BIN_NUM%>) * 2)) == 0 ) {\n"
@@ -372,9 +372,9 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
     "}\n"
     "\n"
     "if ( foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
-    "const __m512 pValue = _mm512_loadu_ps(&(bins[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]));\n"
+    "const __m512 pValue = _mm512_load_ps(&(bins[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]));\n"
     "const __m512 cValue = _mm512_div_ps(_mm512_add_ps(_mm512_mul_ps(_mm512_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>), pValue), _mm512_mul_ps(_mm512_set1_ps(), foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)), _mm512_add_ps(_mm512_set1_ps(pCounterp<%PERIOD_NUM%>n<%BIN_NUM%>), _mm512_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>)));\n"
-    "_mm512_storeu_ps(&((bin + <%BIN_NUM%>)s[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]), cValue)\n"
+    "_mm512_store_ps(&((bin + <%BIN_NUM%>)s[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]), cValue)\n"
     "writeCounters[((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedBins()) + (bin + <%BIN_NUM%>)] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
     "}\n";
   // End kernel's template
