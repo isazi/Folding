@@ -116,7 +116,7 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
 	std::string storeTemplate = "if ( foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
     "const unsigned int outputItem = (bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
     "const "+ dataType + " pValue = bins[outputItem];\n"
-    "bins[outputItem] = ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> * pValue) + (foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> * foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>)) / (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
+    "bins[outputItem] = ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> * pValue) + (foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>)) / (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
     "writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
     "}\n";
 	// End kernel's template
@@ -262,7 +262,7 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
     "\n"
     "if ( foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
     "const __m256 pValue = _mm256_load_ps(&(bins[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]));\n"
-    "const __m256 cValue = _mm256_div_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>), pValue), _mm256_mul_ps(_mm256_set1_ps(), foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)), _mm256_add_ps(_mm256_set1_ps(pCounterp<%PERIOD_NUM%>n<%BIN_NUM%>), _mm256_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>)));\n"
+    "const __m256 cValue = _mm256_div_ps(_mm256_add_ps(_mm256_mul_ps(_mm256_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>), pValue), foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>), _mm256_add_ps(_mm256_set1_ps(pCounterp<%PERIOD_NUM%>n<%BIN_NUM%>), _mm256_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>)));\n"
     "_mm256_store_ps(&((bin + <%BIN_NUM%>)s[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]), cValue)\n"
     "writeCounters[((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedBins()) + (bin + <%BIN_NUM%>)] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
     "}\n";
@@ -363,7 +363,7 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
     "\n"
     "if ( foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
     "const __m512 pValue = _mm512_load_ps(&(bins[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]));\n"
-    "const __m512 cValue = _mm512_div_ps(_mm512_add_ps(_mm512_mul_ps(_mm512_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>), pValue), _mm512_mul_ps(_mm512_set1_ps(), foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)), _mm512_add_ps(_mm512_set1_ps(pCounterp<%PERIOD_NUM%>n<%BIN_NUM%>), _mm512_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>)));\n"
+    "const __m512 cValue = _mm512_div_ps(_mm512_add_ps(_mm512_mul_ps(_mm512_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>), pValue), foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>), _mm512_add_ps(_mm512_set1_ps(pCounterp<%PERIOD_NUM%>n<%BIN_NUM%>), _mm512_set1_ps(foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>)));\n"
     "_mm512_store_ps(&((bin + <%BIN_NUM%>)s[((bin + <%BIN_NUM%>) * observation.getNrPeriods() * observation.getNrPaddedDMs()) + ((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedDMs()) + (dm + <%DM_NUM%>)]), cValue)\n"
     "writeCounters[((periodIndex + <%PERIOD_NUM%>) * observation.getNrPaddedBins()) + (bin + <%BIN_NUM%>)] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
     "}\n";
