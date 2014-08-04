@@ -61,27 +61,29 @@ int main(int argc, char * argv[]) {
   std::string implementation;
 
   headerFile << "#ifndef " + *defineName + "\n#define " + *defineName << std::endl;
-  implementation += "namespace PulsarSearch {\ntemplate< typename T > std::map< std::string, dedispersionFunc< T > > * getDedispersionPointers() {\n";
-  implementation += "std::map< std::string, dedispersionFunc< T > > * functionPointers = new std::map< std::string, dedispersionFunc< T > >();\n";
+  implementation += "namespace PulsarSearch {\ntemplate< typename T > std::map< std::string, foldingFunc< T > > * getFoldingPointers() {\n";
+  implementation += "std::map< std::string, foldingFunc< T > > * functionPointers = new std::map< std::string, foldingFunc< T > >();\n";
 
-  for ( unsigned int samplesPerThread = 1; samplesPerThread <= maxItemsPerThread; samplesPerThread++ ) {
-    for ( unsigned int DMsPerThread = 1; DMsPerThread <= maxItemsPerThread; DMsPerThread++ ) {
-      if ( ( samplesPerThread * DMsPerThread ) > maxItemsPerThread ) {
-        break;
-      }
+  for ( unsigned int DMsPerThread = 1; DMsPerThread <= maxItemsPerThread; DMsPerThread++ ) {
+    for ( unsigned int periodsPerThread = 1; periodsPerThread <= maxItemsPerThread; periodsPerThread++ ) {
+      for ( unsigned int binsPerThread = 1; binsPerThread <= maxItemsPerThread; binsPerThread++ ) {
+        if ( ((periodsPerThread) + (3 * periodsPerThread * binsPerThread) + (periodsPerThread * binsPerThread * DMsPerThread)) > maxItemsPerThread ) {
+          break;
+        }
 
-      // Generate kernel
-      std::string * code = 0;
-      
-      if ( avx ) {
-        code = PulsarSearch::getDedispersionAVX(samplesPerThread, DMsPerThread);
-        implementation += "functionPointers->insert(std::pair< std::string, dedispersionFunc< T > >(\"dedispersionAVX" + isa::utils::toString< unsigned int >(samplesPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread) + "\", reinterpret_cast< dedispersionFunc< T >  >(dedispersionAVX" + isa::utils::toString< unsigned int >(samplesPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread) + "< T >)));\n";
-      } else if ( phi ) {
-        code = PulsarSearch::getDedispersionPhi(samplesPerThread, DMsPerThread);
-        implementation += "functionPointers->insert(std::pair< std::string, dedispersionFunc< T > >(\"dedispersionPhi" + isa::utils::toString< unsigned int >(samplesPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread) + "\", reinterpret_cast< dedispersionFunc< T >  >(dedispersionPhi" + isa::utils::toString< unsigned int >(samplesPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread) + "< T >)));\n";
+        // Generate kernel
+        std::string * code = 0;
+        
+        if ( avx ) {
+          code = PulsarSearch::getFoldingAVX(DMsPerThread, periodsPerThread, binsPerThread);
+          implementation += "functionPointers->insert(std::pair< std::string, foldingFunc< T > >(\"foldingAVX" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "\", reinterpret_cast< foldingFunc< T >  >(foldingAVX" + isa::utils::toString< unsigned int >(samplesPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread) + "< T >)));\n";
+        } else if ( phi ) {
+          code = PulsarSearch::getFoldingPhi(samplesPerThread, DMsPerThread);
+          implementation += "functionPointers->insert(std::pair< std::string, foldingFunc< T > >(\"foldingPhi" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "\", reinterpret_cast< foldingFunc< T >  >(foldingPhi" + isa::utils::toString< unsigned int >(samplesPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread) + "< T >)));\n";
+        }
+        headerFile << *code << std::endl;
+        delete code;
       }
-      headerFile << *code << std::endl;
-      delete code;
     }
   }
 
