@@ -82,134 +82,134 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
 
 	// Begin kernel's template
 	*code = "__kernel void folding(const unsigned int second, __global const " + dataType + " * const restrict samples, __global " + dataType + " * const restrict bins, __global const unsigned int * const restrict readCounters, __global unsigned int * const restrict writeCounters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
-    "<%DEFS%>"
-    "\n"
     "unsigned int sample = 0;"
+    "<%DEFS_PERIOD%>"
+    "<%DEFS_BIN%>"
+    "<%DEFS_DM%>"
+    "<%DEFS_PERIOD_BIN%>"
+    "<%DEFS_PERIOD_BIN_DM%>"
+    "\n"
     "<%COMPUTE%>"
     "\n"
     "<%STORE%>"
     "}\n";
-	std::string defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
 	std::string defsPeriodTemplate = "const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + nrPeriodsPerBlock_s + " * " + nrPeriodsPerThread_s+  ") + get_local_id(1) + (<%PERIOD_NUM%> * " + nrPeriodsPerBlock_s + ");\n"
     "const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n";
 	std::string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
-	std::string samplesPerBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation->getNrBins() * isa::utils::pad(2, observation->getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation->getPadding())) + ")];\n"
+	std::string defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
+	std::string defsPeriodBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation->getNrBins() * isa::utils::pad(2, observation->getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation->getPadding())) + ")];\n"
 		"const unsigned int offsetp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation->getNrBins() * isa::utils::pad(2, observation->getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation->getPadding())) + ") + 1];\n"
-		"const unsigned int pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = readCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>];\n";
-	std::string defsTemplate = "unsigned int foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
-		+ dataType + " foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
+		"const unsigned int pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = readCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>];\n"
+    "unsigned int foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
+	std::string defsPeriodBinDMTemplate = dataType + " foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = 0;\n";
 	std::string computeTemplate = "if ( samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
+    "<%COMPUTE_DM%>"
+    "}\n";
+  std::string computeDMTemplate = "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
     "sample = offsetp<%PERIOD_NUM%>b<%BIN_NUM%> + ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
     "if ( (sample / "+ nrSamplesPerSecond_s + ") == second ) {\n"
     "sample %= "+ nrSamplesPerSecond_s + ";\n"
     "}\n"
     "while ( sample < " + nrSamplesPerSecond_s + " ) {\n"
-    "foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n"
-    "foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
-    "if ( ((foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) == 0 ) {\n"
+    "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n"
+    "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
+    "if ( ((foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) == 0 ) {\n"
     "sample += period<%PERIOD_NUM%>Value - (samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> - 1);\n"
     "} else {\n"
     "sample++;\n"
     "}\n"
-    "}\n"
     "}\n";
-	std::string storeTemplate = "if ( foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
-    "const unsigned int outputItem = (bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
+	std::string storeTemplate = "if ( foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
+    "<%STORE_DM%>"
+    "}\n";
+  std::string storeDMTemplate ="const unsigned int outputItem = (bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
     "const "+ dataType + " pValue = bins[outputItem];\n"
-    "bins[outputItem] = ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> * pValue) + (foldedSampleDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>)) / (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
-    "writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
-    "}\n";
+    "bins[outputItem] = ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> * pValue) + (foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)) / (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
+    "writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterDM<%DM_NUM%>p<%PERIOD_NUM%>b<%BIN_NUM%>;\n";
 	// End kernel's template
 
-	std::string * defs = new std::string();
-	std::string * computes = new std::string();
-	std::string * stores = new std::string();
+	std::string * defsPeriod_s = new std::string();
+  std::string * defsBin_s = new std::string();
+  std::string * defsDM_s = new std::string();
+  std::string * defsPeriodBin_s = new std::string();
+  std::string * defsPeriodBinDM_s = new std::string();
+	std::string * compute_s = new std::string();
+	std::string * store_s = new std::string();
 
-	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
-		std::string DM_s = isa::utils::toString< unsigned int >(DM);
-		std::string * temp = 0;
-
-		temp = isa::utils::replace(&defsDMTemplate, "<%DM_NUM%>", DM_s);
-		defs->append(*temp);
-		delete temp;
-	}
-	for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
-		std::string period_s = isa::utils::toString< unsigned int >(period);
-		std::string * temp = 0;
-
-		temp = isa::utils::replace(&defsPeriodTemplate, "<%PERIOD_NUM%>", period_s);
-		defs->append(*temp);
-		delete temp;
-	}
-	for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
-		std::string bin_s = isa::utils::toString< unsigned int >(bin);
-		std::string * temp = 0;
-
-		temp = isa::utils::replace(&defsBinTemplate, "<%BIN_NUM%>", bin_s);
-		defs->append(*temp);
-		delete temp;
-	}
-	for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
-		std::string period_s = isa::utils::toString< unsigned int >(period);
-
-		for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
-      std::string bin_s = isa::utils::toString< unsigned int >(bin);
-			std::string * temp = 0;
-
-			temp = isa::utils::replace(&samplesPerBinTemplate, "<%BIN_NUM%>", bin_s);
-			temp = isa::utils::replace(temp, "<%PERIOD_NUM%>", period_s, true);
-			defs->append(*temp);
-			delete temp;
-		}
-	}
-	for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
+  for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
     std::string bin_s = isa::utils::toString< unsigned int >(bin);
+    std::string * temp = 0;
 
-		for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
-      std::string period_s = isa::utils::toString< unsigned int >(period);
+    temp = isa::utils::replace(&defsBinTemplate, "<%BIN_NUM%>", bin_s);
+    defsBin_s->append(*temp);
+    delete temp;
+  }
+  for ( unsigned int dm = 0; dm < nrDMsPerThread; dm++ ) {
+    std::string dm_s = isa::utils::toString< unsigned int >(dm);
+    std::string * temp = 0;
 
-			for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
-        std::string DM_s = isa::utils::toString< unsigned int >(DM);
-				std::string * temp = 0;
+    temp = isa::utils::replace(&defsDMTemplate, "<%DM_NUM%>", dm_s);
+    defsDM_s->append(*temp);
+    delete temp;
+  }
+  for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
+    std::string period_s = isa::utils::toString< unsigned int >(period);
+    std::string * temp = 0;
 
-				temp = isa::utils::replace(&defsTemplate, "<%BIN_NUM%>", bin_s);
-				temp = isa::utils::replace(temp, "<%PERIOD_NUM%>", period_s, true);
-				temp = isa::utils::replace(temp, "<%DM_NUM%>", DM_s, true);
-				defs->append(*temp);
-				delete temp;
+    temp = isa::utils::replace(&defsPeriodTemplate, "<%PERIOD_NUM%>", period_s);
+    defsPeriod_s->append(*temp);
+    delete temp;
 
-				temp = isa::utils::replace(&storeTemplate, "<%BIN_NUM%>", bin_s);
-				temp = isa::utils::replace(temp, "<%PERIOD_NUM%>", period_s, true);
-				temp = isa::utils::replace(temp, "<%DM_NUM%>", DM_s, true);
-				stores->append(*temp);
-				delete temp;
-			}
-		}
-	}
-	for ( unsigned int DM = 0; DM < nrDMsPerThread; DM++ ) {
-    std::string DM_s = isa::utils::toString< unsigned int >(DM);
+    for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
+      std::string bin_s = isa::utils::toString< unsigned int >(bin);
+      std::string * temp = 0;
+      std::string * computeDM_s = new std::string();
+      std::string * storeDM_s = new std::string();
 
-		for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
-        std::string bin_s = isa::utils::toString< unsigned int >(bin);
+      temp = isa::utils::replace(&defsPeriodBinTemplate, "<%PERIOD_NUM%>", period_s);
+      temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
+      defsPeriodBin_s->append(*temp);
+      delete temp;
 
-				for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
-        std::string period_s = isa::utils::toString< unsigned int >(period);
-				std::string * temp = 0;
+      for ( unsigned int dm = 0; dm < nrBinsPerThread; dm++ ) {
+        std::string dm_s = isa::utils::toString< unsigned int >(dm);
+        std::string * temp = 0;
 
-				temp = isa::utils::replace(&computeTemplate, "<%BIN_NUM%>", bin_s);
-				temp = isa::utils::replace(temp, "<%PERIOD_NUM%>", period_s, true);
-				temp = isa::utils::replace(temp, "<%DM_NUM%>", DM_s, true);
-				computes->append(*temp);
-				delete temp;
-			}
-		}
-	}
-	code = isa::utils::replace(code, "<%DEFS%>", *defs, true);
-	code = isa::utils::replace(code, "<%COMPUTE%>", *computes, true);
-	code = isa::utils::replace(code, "<%STORE%>", *stores, true);
-	delete defs;
-	delete computes;
-	delete stores;
+        temp = isa::utils::replace(&defsPeriodBinDMTemplate, "<%PERIOD_NUM%>", period_s);
+        temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
+        temp = isa::utils::replace(temp, "<%DM_NUM%>", dm_s, true);
+        defsPeriodBinDM_s->append(*temp);
+        delete temp;
+        temp = isa::utils::replace(&computeDMTemplate, "<%PERIOD_NUM%>", period_s);
+        temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
+        temp = isa::utils::replace(temp, "<%DM_NUM%>", dm_s, true);
+        computeDM_s->append(*temp);
+        delete temp;
+        temp = isa::utils::replace(&storeDMTemplate, "<%PERIOD_NUM%>", period_s);
+        temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
+        temp = isa::utils::replace(temp, "<%DM_NUM%>", dm_s, true);
+        storeDM_s->append(*temp);
+        delete temp;
+      }
+      temp = isa::utils::replace(&computeTemplate, "<%PERIOD_NUM%>", period_s);
+      temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
+      temp = isa::utils::replace(temp, "<%COMPUTE_DM%>", *computeDM_s, true);
+      compute_s->append(*temp);
+      delete temp;
+      temp = isa::utils::replace(&storeTemplate, "<%PERIOD_NUM%>", period_s);
+      temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
+      temp = isa::utils::replace(temp, "<%COMPUTE_DM%>", *storeDM_s, true);
+      store_s->append(*temp);
+      delete temp;
+    }
+  }
+  code = isa::utils::replace(code, "<%DEFS_PERIOD%>", *defsPeriod_s, true);
+  code = isa::utils::replace(code, "<%DEFS_BIN%>", *defsBin_s, true);
+  code = isa::utils::replace(code, "<%DEFS_DM%>", *defsDM_s, true);
+  code = isa::utils::replace(code, "<%DEFS_PERIOD_BIN%>", *defsPeriodBin_s, true);
+  code = isa::utils::replace(code, "<%DEFS_PERIOD_BIN_DM%>", *defsPeriodBinDM_s, true);
+  code = isa::utils::replace(code, "<%COMPUTE%>", *compute_s, true);
+  code = isa::utils::replace(code, "<%STORE%>", *store_s, true);
 
   return code;
 }
