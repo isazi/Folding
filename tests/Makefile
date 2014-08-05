@@ -1,25 +1,21 @@
 
-debug		:= 1
+debug		:= 0
 include		../Makefile.inc
 
 
-all: clean FoldingCPU FoldingAVX Folding
+all: clean Folding
+ 
 
 Folding: Folding.cpp
-	$(LINKER) -o $(PROJ_BASE)/bin/FoldingTest Folding.cpp $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
+	$(INTELCXX) -o $(PROJ_BASE)/bin/FoldingTest Folding.cpp $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
 
 FoldingAVX: FoldingAVX.cpp
-	$(INTELCXX) -o $(PROJ_BASE)/bin/FoldingAVXTest FoldingAVX.cpp $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
+	$(INTELCXX) -o $(PROJ_BASE)/bin/FoldingAVXTest FoldingAVX.cpp $(AVX_INCLUDES) $(AVX_LIBS) $(AVX_CFLAGS) $(AVX_LDFLAGS)
 
-FoldingCPU: FoldingCPU.cpp
-	$(LINKER) -o $(PROJ_BASE)/bin/FoldingCPUTest FoldingCPU.cpp $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
-
-Bins: Bins.cpp
-	$(LINKER) -o $(PROJ_BASE)/bin/BinsTest Bins.cpp $(INCLUDES) $(LIBS) $(CFLAGS) $(LDFLAGS)
+FoldingPhi: FoldingPhi.cpp
+	$(INTELCXX) -o $(PROJ_BASE)/bin/FoldingPhiTest FoldingPhi.cpp $(PHI_INCLUDES) $(PHI_LIBS) $(PHI_CFLAGS) $(PHI_LDFLAGS)
 
 clean:
 	rm -f $(PROJ_BASE)/bin/FoldingTest
 	rm -f $(PROJ_BASE)/bin/FoldingAVXTest
-	rm -f $(PROJ_BASE)/bin/FoldingCPUTest
-	rm -f $(PROJ_BASE)/bin/BinsTest
-
+	rm -f $(PROJ_BASE)/bin/FoldingPhiTest
