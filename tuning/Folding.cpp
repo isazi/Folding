@@ -166,8 +166,7 @@ int main(int argc, char * argv[]) {
               if ( observation.getNrBins() % (*bins * binsPerThread) != 0 ) {
                 continue;
               }
-              // TODO: complete the expression.
-              if ( () > maxItemsPerThread ) {
+              if ( 1 + (2 * periodsPerThread) + binsPerThread + DMsPerThread + (4 * periodsPerThread * binsPerThread * DMsPerThread) + (periodsPerThread * binsPerThread * DMsPerThread) > maxItemsPerThread ) {
                 break;
               }
               // Generate kernel
