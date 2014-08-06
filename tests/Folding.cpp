@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
     for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
       for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
         (dedispersedData.at(second))->at((sample * observation.getNrPaddedDMs()) + dm) = static_cast< dataType >(rand() % 10);
-        dedispersedData_c.at(second)[(dm * observation.getNrSamplesPerPaddedSecond()) + sample] = dedispersedData.at(second)[(sample * observation.getNrPaddedDMs()) + dm];
+        (dedispersedData_c.at(second))->at((dm * observation.getNrSamplesPerPaddedSecond()) + sample) = (dedispersedData.at(second))->at((sample * observation.getNrPaddedDMs()) + dm);
       }
     }
   }
