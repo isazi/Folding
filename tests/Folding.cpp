@@ -27,6 +27,7 @@
 #include <InitializeOpenCL.hpp>
 #include <Kernel.hpp>
 #include <utils.hpp>
+#include <Bins.hpp>
 #include <Folding.hpp>
 
 typedef float dataType;
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
   for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
     for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
       for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
-        dedispersedData.at(second)[(sample * observation.getNrPaddedDMs()) + dm] = static_cast< dataType >(rand() % 10);
+        (dedispersedData.at(second))->a((sample * observation.getNrPaddedDMs()) + dm) = static_cast< dataType >(rand() % 10);
         dedispersedData_c.at(second)[(dm * observation.getNrSamplesPerPaddedSecond()) + sample] = dedispersedData.at(second)[(sample * observation.getNrPaddedDMs()) + dm];
       }
     }
@@ -129,8 +130,8 @@ int main(int argc, char *argv[]) {
   try {
     clQueues->at(clDeviceID)[0].enqueueWriteBuffer(samplesPerBin_d, CL_FALSE, 0, samplesPerBin->size() * sizeof(unsigned int), reinterpret_cast< void * >(samplesPerBin->data()));
     clQueues->at(clDeviceID)[0].enqueueWriteBuffer(foldedData_d, CL_FALSE, 0, foldedData.size() * sizeof(dataType), reinterpret_cast< void * >(foldedData.data()));
-    clQueues->at(clDeviceID)[0].enqueueWriteBuffer(readCounters_d, CL_FALSE, 0, readCounters->size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters->data()));
-    clQueues->at(clDeviceID)[0].enqueueWriteBuffer(writeCounters_d, CL_FALSE, 0, writeCounters->size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters->data()));
+    clQueues->at(clDeviceID)[0].enqueueWriteBuffer(readCounters_d, CL_FALSE, 0, readCounters->size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters.data()));
+    clQueues->at(clDeviceID)[0].enqueueWriteBuffer(writeCounters_d, CL_FALSE, 0, writeCounters->size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters.data()));
   } catch ( cl::Error &err ) {
     std::cerr << "OpenCL error H2D transfer: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
     return 1;
@@ -157,7 +158,7 @@ int main(int argc, char *argv[]) {
 
     kernel->setArg(1, dedispersedData_d);
     kernel->setArg(2, foldedData_d);
-    kernel->setArg(5, *samplesPerBin_d);
+    kernel->setArg(5, samplesPerBin_d);
     for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
       kernel->setArg(0, second);
       if ( second % 2 == 0 ) {
@@ -180,7 +181,7 @@ int main(int argc, char *argv[]) {
   for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
     for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
       for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
-        if ( ! same(foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin], foldedData[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) * (period * observation.getNrPaddedDMs()) + dm]) ) {
+        if ( ! isa::utils::same(foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin], foldedData[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) * (period * observation.getNrPaddedDMs()) + dm]) ) {
           wrongSamples++;
         }
       }
