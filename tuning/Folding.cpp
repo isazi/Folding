@@ -188,7 +188,7 @@ int main(int argc, char * argv[]) {
               kernel->setArg(2, foldedData_d);
               kernel->setArg(3, readCounters_d);
               kernel->setArg(4, writeCounters_d);
-              kernel->setArg(5, samplesPerBin_d);
+              kernel->setArg(5, *samplesPerBin_d);
 
               // Warm-up run
               try {
