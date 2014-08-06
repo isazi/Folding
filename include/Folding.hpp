@@ -39,7 +39,7 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
 
 
 // Implementations
-template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters) {
+template< typename T > void folding(const unsigned int second, const AstroData::Observation< T > & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters) {
   for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
     for ( unsigned int periodIndex = 0; periodIndex < observation.getNrPeriods(); periodIndex++ ) {
       const unsigned int periodValue = observation.getFirstPeriod() + (periodIndex * observation.getPeriodStep());
@@ -48,7 +48,7 @@ template< typename T > void folding(const unsigned int second, const Observation
         const unsigned int sample = (second * observation.getNrSamplesPerSecond()) + globalSample;
         const float phase = (sample / static_cast< float >(periodValue)) - (sample / periodValue);
         const unsigned int bin = static_cast< unsigned int >(phase * static_cast< float >(observation.getNrBins()));
-        const unsigned int globalItem = (((dm * observation.getNrPeriods()) + periodIndex) * observation.getNrPaddedBins()) + bin;
+        const unsigned int globalItem = (dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (periodIndex * observation.getNrPaddedBins()) + bin;
 
         const T pValue = bins[globalItem];
         const unsigned int pCounter = counters[globalItem];
