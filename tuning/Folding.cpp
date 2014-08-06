@@ -118,8 +118,8 @@ int main(int argc, char * argv[]) {
     clQueues->at(clDeviceID)[0].enqueueWriteBuffer(samplesPerBin_d, CL_FALSE, 0, samplesPerBin->size() * sizeof(unsigned int), reinterpret_cast< void * >(samplesPerBin->data()));
     clQueues->at(clDeviceID)[0].enqueueWriteBuffer(dedispersedData_d, CL_FALSE, 0, dedispersedData.size() * sizeof(dataType), reinterpret_cast< void * >(dedispersedData.data()));
     clQueues->at(clDeviceID)[0].enqueueWriteBuffer(foldedData_d, CL_FALSE, 0, foldedData.size() * sizeof(dataType), reinterpret_cast< void * >(foldedData.data()));
-    clQueues->at(clDeviceID)[0].enqueueWriteBuffer(readCounters_d, CL_FALSE, 0, readCounters->size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters->data()));
-    clQueues->at(clDeviceID)[0].enqueueWriteBuffer(writeCounters_d, CL_FALSE, 0, writeCounters->size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters->data()));
+    clQueues->at(clDeviceID)[0].enqueueWriteBuffer(readCounters_d, CL_FALSE, 0, readCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters->data()));
+    clQueues->at(clDeviceID)[0].enqueueWriteBuffer(writeCounters_d, CL_FALSE, 0, writeCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters->data()));
   } catch ( cl::Error &err ) {
     std::cerr << "OpenCL error H2D transfer: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
     return 1;
@@ -134,13 +134,13 @@ int main(int argc, char * argv[]) {
 	}
 	std::vector< unsigned int > periodsPerBlock;
 	for ( unsigned int periods = 1; periods <= maxRows; periods++ ) {
-		if ( (observation.getNrperiods() % periods) == 0 ) {
+		if ( (observation.getNrPeriods() % periods) == 0 ) {
 			periodsPerBlock.push_back(periods);
 		}
 	}
 	std::vector< unsigned int > binsPerBlock;
 	for ( unsigned int bins = 1; bins <= maxRows; bins++ ) {
-		if ( (observation.getNrbins() % bins) == 0 ) {
+		if ( (observation.getNrBins() % bins) == 0 ) {
 			binsPerBlock.push_back(bins);
 		}
 	}
@@ -188,7 +188,7 @@ int main(int argc, char * argv[]) {
               kernel->setArg(2, foldedData_d);
               kernel->setArg(3, readCounters_d);
               kernel->setArg(4, writeCounters_d);
-              kernel->setArg(5, *samplesPerBin_d);
+              kernel->setArg(5, samplesPerBin_d);
 
               // Warm-up run
               try {
