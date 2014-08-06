@@ -268,10 +268,10 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
     "}\n";
   // End kernel's template
   
-  std::string periodVars_s = new std::string();
-  std::string binVars_s = new std::string();
-  std::string dmVars_s = new std::string();
-  std::string compute_s = new std::string();
+  std::string * periodVars_s = new std::string();
+  std::string * binVars_s = new std::string();
+  std::string * dmVars_s = new std::string();
+  std::string * compute_s = new std::string();
 
   for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
     std::string period_s = isa::utils::toString< unsigned int >(period);
