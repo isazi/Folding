@@ -23,7 +23,6 @@
 
 #include <ArgumentList.hpp>
 #include <Observation.hpp>
-#include <Shifts.hpp>
 #include <Folding.hpp>
 #include <utils.hpp>
 #include <Exceptions.hpp>
