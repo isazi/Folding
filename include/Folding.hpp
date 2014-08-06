@@ -67,12 +67,12 @@ template< typename T > void folding(const unsigned int second, const AstroData::
 
 template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, std::string & dataType, const AstroData::Observation< T > & observation) {
   std::string * code = new std::string();
-	std::string nrSamplesPerSecond_s = isa::utils::toString< unsigned int >(observation->getNrSamplesPerSecond());
-	std::string nrPaddedDMs_s  = isa::utils::toString< unsigned int >(observation->getNrPaddedDMs());
-	std::string nrPeriods_s = isa::utils::toString< unsigned int >(observation->getNrPeriods());
-	std::string firstPeriod_s = isa::utils::toString< unsigned int >(observation->getFirstPeriod());
-	std::string periodStep_s = isa::utils::toString< unsigned int >(observation->getPeriodStep());
-	std::string nrPaddedBins_s = isa::utils::toString< unsigned int >(observation->getNrPaddedBins());
+	std::string nrSamplesPerSecond_s = isa::utils::toString< unsigned int >(observation.getNrSamplesPerSecond());
+	std::string nrPaddedDMs_s  = isa::utils::toString< unsigned int >(observation.getNrPaddedDMs());
+	std::string nrPeriods_s = isa::utils::toString< unsigned int >(observation.getNrPeriods());
+	std::string firstPeriod_s = isa::utils::toString< unsigned int >(observation.getFirstPeriod());
+	std::string periodStep_s = isa::utils::toString< unsigned int >(observation.getPeriodStep());
+	std::string nrPaddedBins_s = isa::utils::toString< unsigned int >(observation.getNrPaddedBins());
 	std::string nrDMsPerBlock_s = isa::utils::toString< unsigned int >(nrDMsPerBlock);
 	std::string nrDMsPerThread_s = isa::utils::toString< unsigned int >(nrDMsPerThread);
 	std::string nrPeriodsPerBlock_s = isa::utils::toString< unsigned int >(nrPeriodsPerBlock);
@@ -97,8 +97,8 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
     "const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n";
 	std::string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
 	std::string defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
-	std::string defsPeriodBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation->getNrBins() * isa::utils::pad(2, observation->getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation->getPadding())) + ")];\n"
-		"const unsigned int offsetp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation->getNrBins() * isa::utils::pad(2, observation->getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation->getPadding())) + ") + 1];\n"
+	std::string defsPeriodBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation.getPadding())) + ")];\n"
+		"const unsigned int offsetp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation.getPadding())) + ") + 1];\n"
 		"const unsigned int pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = readCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>];\n"
     "unsigned int foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
 	std::string defsPeriodBinDMTemplate = dataType + " foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = 0;\n";
