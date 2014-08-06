@@ -27,7 +27,6 @@
 #include <InitializeOpenCL.hpp>
 #include <Kernel.hpp>
 #include <utils.hpp>
-#include <Shifts.hpp>
 #include <Folding.hpp>
 
 typedef float dataType;
