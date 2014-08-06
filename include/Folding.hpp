@@ -82,7 +82,7 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
 
 	// Begin kernel's template
 	*code = "__kernel void folding(const unsigned int second, __global const " + dataType + " * const restrict samples, __global " + dataType + " * const restrict bins, __global const unsigned int * const restrict readCounters, __global unsigned int * const restrict writeCounters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
-    "unsigned int sample = 0;"
+    "unsigned int sample = 0;\n"
     "<%DEFS_PERIOD%>"
     "<%DEFS_BIN%>"
     "<%DEFS_DM%>"
