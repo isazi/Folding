@@ -29,7 +29,7 @@ namespace PulsarSearch {
 template< typename T > using foldingFunc = void (*)(unsigned int, AstroData::Observation< T > &, float *, float *, unsigned int *, unsigned int *, unsigned int *);
 
 // Sequential folding
-template< typename T > void folding(const unsigned int second, const Observation< T > & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters);
+template< typename T > void folding(const unsigned int second, const AstroData::Observation< T > & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters);
 // OpenCL folding algorithm
 template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, std::string & dataType, const AstroData::Observation< T > & observation);
 // AVX folding algorithm
