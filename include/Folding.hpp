@@ -121,10 +121,11 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
     "}\n";
 	std::string storeTemplate = "if ( foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
     "unsigned int outputItem = 0;\n"
+    + dataType + " pValue = 0;\n"
     "<%STORE_DM%>"
     "}\n";
   std::string storeDMTemplate ="outputItem = (bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
-    "const "+ dataType + " pValue = bins[outputItem];\n"
+    "pValue = bins[outputItem];\n"
     "bins[outputItem] = ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> * pValue) + (foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)) / (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
     "writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n";
 	// End kernel's template
