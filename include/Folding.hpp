@@ -278,7 +278,7 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
     string * temp = 0;
 
     temp = isa::utils::replace(&periodVarsTemplate, "<%PERIOD_NUM%>", period_s);
-    periodVars_s.append(*temp);
+    periodVars_s->append(*temp);
     delete temp;
 
     for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
@@ -287,7 +287,7 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
 
       temp = isa::utils::replace(&binVarsTemplate, "<%PERIOD_NUM%>", period_s);
       temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
-      binVars_s.append(*temp);
+      binVars_s->append(*temp);
       delete temp;
 
       for ( unsigned int dm = 0; dm < nrDMsPerThread; dm++ ) {
@@ -297,20 +297,20 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
         temp = isa::utils::replace(&dmVarsTemplate, "<%PERIOD_NUM%>", period_s);
         temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
         temp = isa::utils::replace(temp, "<%DM_NUM%>", dm_s, true);
-        dmVars_s.append(*temp);
+        dmVars_s->append(*temp);
         temp = isa::utils::replace(&computeTemplate, "<%PERIOD_NUM%>", period_s);
         temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
         temp = isa::utils::replace(temp, "<%DM_NUM%>", dm_s, true);
-        compute_s.append(*temp);
+        compute_s->append(*temp);
         delete temp;
       }
     }
   }
 
-  code = isa::utils::replace(code, "<%PERIOD_VARS%>", periodVars_s, true);
-  code = isa::utils::replace(code, "<%BIN_VARS%>", binVars_s, true);
-  code = isa::utils::replace(code, "<%DM_VARS%>", dmVars_s, true);
-  code = isa::utils::replace(code, "<%COMPUTE%>", compute_s, true);
+  code = isa::utils::replace(code, "<%PERIOD_VARS%>", *periodVars_s, true);
+  code = isa::utils::replace(code, "<%BIN_VARS%>", *binVars_s, true);
+  code = isa::utils::replace(code, "<%DM_VARS%>", *dmVars_s, true);
+  code = isa::utils::replace(code, "<%COMPUTE%>", *compute_s, true);
 
   return code;
 }
@@ -369,17 +369,17 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
     "}\n";
   // End kernel's template
   
-  std::string periodVars_s = new std::string();
-  std::string binVars_s = new std::string();
-  std::string dmVars_s = new std::string();
-  std::string compute_s = new std::string();
+  std::string * periodVars_s = new std::string();
+  std::string * binVars_s = new std::string();
+  std::string * dmVars_s = new std::string();
+  std::string * compute_s = new std::string();
 
   for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
     std::string period_s = isa::utils::toString< unsigned int >(period);
     string * temp = 0;
 
     temp = isa::utils::replace(&periodVarsTemplate, "<%PERIOD_NUM%>", period_s);
-    periodVars_s.append(*temp);
+    periodVars_s->append(*temp);
     delete temp;
 
     for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
@@ -388,7 +388,7 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
 
       temp = isa::utils::replace(&binVarsTemplate, "<%PERIOD_NUM%>", period_s);
       temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
-      binVars_s.append(*temp);
+      binVars_s->append(*temp);
       delete temp;
 
       for ( unsigned int dm = 0; dm < nrDMsPerThread; dm++ ) {
@@ -398,20 +398,20 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
         temp = isa::utils::replace(&dmVarsTemplate, "<%PERIOD_NUM%>", period_s);
         temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
         temp = isa::utils::replace(temp, "<%DM_NUM%>", dm_s, true);
-        dmVars_s.append(*temp);
+        dmVars_s->append(*temp);
         temp = isa::utils::replace(&computeTemplate, "<%PERIOD_NUM%>", period_s);
         temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
         temp = isa::utils::replace(temp, "<%DM_NUM%>", dm_s, true);
-        compute_s.append(*temp);
+        compute_s->append(*temp);
         delete temp;
       }
     }
   }
 
-  code = isa::utils::replace(code, "<%PERIOD_VARS%>", periodVars_s, true);
-  code = isa::utils::replace(code, "<%BIN_VARS%>", binVars_s, true);
-  code = isa::utils::replace(code, "<%DM_VARS%>", dmVars_s, true);
-  code = isa::utils::replace(code, "<%COMPUTE%>", compute_s, true);
+  code = isa::utils::replace(code, "<%PERIOD_VARS%>", *periodVars_s, true);
+  code = isa::utils::replace(code, "<%BIN_VARS%>", *binVars_s, true);
+  code = isa::utils::replace(code, "<%DM_VARS%>", *dmVars_s, true);
+  code = isa::utils::replace(code, "<%COMPUTE%>", *compute_s, true);
 
   return code;
 }
