@@ -75,10 +75,10 @@ int main(int argc, char * argv[]) {
         
         if ( avx ) {
           code = PulsarSearch::getFoldingAVX(DMsPerThread, periodsPerThread, binsPerThread);
-          implementation += "functionPointers->insert(std::pair< std::string, foldingFunc< T > >(\"foldingAVX" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "\", reinterpret_cast< foldingFunc< T >  >(foldingAVX" + isa::utils::toString< unsigned int >(samplesPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread) + "< T >)));\n";
+          implementation += "functionPointers->insert(std::pair< std::string, foldingFunc< T > >(\"foldingAVX" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "\", reinterpret_cast< foldingFunc< T >  >(foldingAVX" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "< T >)));\n";
         } else if ( phi ) {
-          code = PulsarSearch::getFoldingPhi(samplesPerThread, DMsPerThread);
-          implementation += "functionPointers->insert(std::pair< std::string, foldingFunc< T > >(\"foldingPhi" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "\", reinterpret_cast< foldingFunc< T >  >(foldingPhi" + isa::utils::toString< unsigned int >(samplesPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread) + "< T >)));\n";
+          code = PulsarSearch::getFoldingPhi(DMsPerThread, periodsPerThread, binsPerThread);
+          implementation += "functionPointers->insert(std::pair< std::string, foldingFunc< T > >(\"foldingPhi" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "\", reinterpret_cast< foldingFunc< T >  >(foldingPhi" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "< T >)));\n";
         }
         headerFile << *code << std::endl;
         delete code;
