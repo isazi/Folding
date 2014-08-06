@@ -171,7 +171,7 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
       defsPeriodBin_s->append(*temp);
       delete temp;
 
-      for ( unsigned int dm = 0; dm < nrBinsPerThread; dm++ ) {
+      for ( unsigned int dm = 0; dm < nrDMsPerThread; dm++ ) {
         std::string dm_s = isa::utils::toString< unsigned int >(dm);
         std::string * temp = 0;
 
