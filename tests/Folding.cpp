@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
   for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
     for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
       for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
-        if ( ! isa::utils::same(foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin], foldedData[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) * (period * observation.getNrPaddedDMs()) + dm]) ) {
+        if ( ! isa::utils::same(foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin], foldedData[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + dm]) ) {
           wrongSamples++;
         }
       }
