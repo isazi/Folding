@@ -1,4 +1,4 @@
-// Copyright 2012 Alessio Sclocco <a.sclocco@vu.nl>
+// Copyright 2014 Alessio Sclocco <a.sclocco@vu.nl>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   unsigned int nrDMsPerThread = 0;
   unsigned int nrPeriodsPerThread = 0;
   unsigned int nrBinsPerThread = 0;
-	long long unsigned int wrongSamples= 0;
+	long long unsigned int wrongSamples = 0;
 	AstroData::Observation< dataType > observation("FoldingTest", typeName);
 
 	try {
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception &err ) {
-    std::cerr << "Usage: " << argv[0] << " [-print] -opencl_platform ... -openc;l_device ... -padding ... -db ... -pb ... -bb ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [-print] -opencl_platform ... -opencl_device ... -padding ... -db ... -pb ... -bb ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	}
 
