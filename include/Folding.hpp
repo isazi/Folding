@@ -198,7 +198,7 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
       delete temp;
       temp = isa::utils::replace(&storeTemplate, "<%PERIOD_NUM%>", period_s);
       temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
-      temp = isa::utils::replace(temp, "<%COMPUTE_DM%>", *storeDM_s, true);
+      temp = isa::utils::replace(temp, "<%STORE_DM%>", *storeDM_s, true);
       store_s->append(*temp);
       delete temp;
     }
