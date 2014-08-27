@@ -34,7 +34,6 @@
 int main(int argc, char *argv[]) {
   bool avx = false;
   bool phi = false;
-  bool print = false;
   unsigned int nrDMsPerThread = 0;
   unsigned int nrPeriodsPerThread = 0;
   unsigned int nrBinsPerThread = 0;
@@ -43,7 +42,6 @@ int main(int argc, char *argv[]) {
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
-    print = args.getSwitch("-print");
     avx = args.getSwitch("-avx");
     phi = args.getSwitch("-phi");
     if ( ! (avx || phi) ) {
@@ -64,7 +62,7 @@ int main(int argc, char *argv[]) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception &err ) {
-    std::cerr << "Usage: " << argv[0] << " [-print] [-avx] [-phi] ... -padding ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [-avx] [-phi] ... -padding ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	}
 
@@ -102,9 +100,9 @@ int main(int argc, char *argv[]) {
   PulsarSearch::foldingFunc< float > folding = 0;
 
   if ( avx ) {
-    folding = functionPointers->at("foldingAVX" + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + "x" + isa::utils::toString< unsigned int >(nrBinsPerThread) + "x" + isa::utils::toString< unsigned int >(nrDMsPerThread));
+    folding = functionPointers->at("foldingAVX" + isa::utils::toString< unsigned int >(nrDMsPerThread) + "x" + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + "x" + isa::utils::toString< unsigned int >(nrBinsPerThread));
   } else if ( phi ) {
-    folding = functionPointers->at("foldingPhi" + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + "x" + isa::utils::toString< unsigned int >(nrBinsPerThread) + "x" + isa::utils::toString< unsigned int >(nrDMsPerThread));
+    folding = functionPointers->at("foldingPhi" + isa::utils::toString< unsigned int >(nrDMsPerThread) + "x" + isa::utils::toString< unsigned int >(nrPeriodsPerThread) + "x" + isa::utils::toString< unsigned int >(nrBinsPerThread));
   }
 
   // Run SIMD kernel and CPU control
