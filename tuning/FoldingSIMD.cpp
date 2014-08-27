@@ -116,9 +116,9 @@ int main(int argc, char * argv[]) {
         PulsarSearch::foldingFunc< float > folding = 0;
 
         if ( avx ) {
-          folding = functionPointers->at("foldingAVX" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread));
+          folding = functionPointers->at("foldingAVX" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread));
         } else if ( phi ) {
-          folding = functionPointers->at("foldingPhi" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread) + "x" + isa::utils::toString< unsigned int >(DMsPerThread));
+          folding = functionPointers->at("foldingPhi" + isa::utils::toString< unsigned int >(DMsPerThread) + "x" + isa::utils::toString< unsigned int >(periodsPerThread) + "x" + isa::utils::toString< unsigned int >(binsPerThread));
         }
         for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
           std::memcpy(dedispersedData.data(), dedispersedData.data(), dedispersedData.size() * sizeof(float));
