@@ -3,7 +3,7 @@ debug		:= 0
 include		../Makefile.inc
 
 
-all: clean Folding
+all: clean Folding FoldingAVX FoldingPhi
  
 
 Folding: Folding.cpp
