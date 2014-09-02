@@ -277,7 +277,7 @@ std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned in
 
   for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
     std::string period_s = isa::utils::toString< unsigned int >(period);
-    string * temp = 0;
+    std::string * temp = 0;
 
     temp = isa::utils::replace(&periodVarsTemplate, "<%PERIOD_NUM%>", period_s);
     periodVars_s->append(*temp);
@@ -378,7 +378,7 @@ std::string * getFoldingPhi(const unsigned int nrDMsPerThread, const unsigned in
 
   for ( unsigned int period = 0; period < nrPeriodsPerThread; period++ ) {
     std::string period_s = isa::utils::toString< unsigned int >(period);
-    string * temp = 0;
+    std::string * temp = 0;
 
     temp = isa::utils::replace(&periodVarsTemplate, "<%PERIOD_NUM%>", period_s);
     periodVars_s->append(*temp);
