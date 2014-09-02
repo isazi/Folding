@@ -28,7 +28,6 @@
 #include <Bins.hpp>
 #include <Folding.hpp>
 #include <utils.hpp>
-#include <Exceptions.hpp>
 #include <Timer.hpp>
 #include <Stats.hpp>
 
@@ -65,7 +64,7 @@ int main(int argc, char * argv[]) {
     observation.setNrBins(args.getSwitchArgument< unsigned int >("-bins"));
     observation.setFirstPeriod(args.getSwitchArgument< unsigned int >("-first_period"));
     observation.setPeriodStep(args.getSwitchArgument< unsigned int >("-period_step"));
-	} catch ( isa::Exceptions::EmptyCommandLine &err ) {
+	} catch ( isa::utils::EmptyCommandLine &err ) {
 		std::cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... -min_threads ... -max_threads ... -max_items ... -max_columns ... -max_rows ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	} catch ( std::exception &err ) {
@@ -175,7 +174,7 @@ int main(int argc, char * argv[]) {
 
               try {
                 kernel = isa::OpenCL::compile("folding", *code, "-cl-mad-enable -Werror", *clContext, clDevices->at(clDeviceID));
-              } catch ( isa::Exceptions::OpenCLError &err ) {
+              } catch ( isa::OpenCL::OpenCLError &err ) {
                 std::cerr << err.what() << std::endl;
                 continue;
               }
