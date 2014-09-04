@@ -167,13 +167,14 @@ int main(int argc, char * argv[]) {
               if ( observation.getNrBins() % (*bins * binsPerThread) != 0 ) {
                 continue;
               }
-              if ( 1 + (2 * periodsPerThread) + binsPerThread + DMsPerThread + (4 * periodsPerThread * binsPerThread) + (vector * periodsPerThread * binsPerThread * DMsPerThread) > maxItemsPerThread ) {
-                break;
-              }
               for ( unsigned int vector = 1; vector < maxVector; vector *= 2 ) {
                 if ( observation.getNrPaddedDMs() % (*DMs * DMsPerThread * vector) != 0 ) {
                   continue;
                 }
+                if ( 1 + (2 * periodsPerThread) + binsPerThread + DMsPerThread + (4 * periodsPerThread * binsPerThread) + (vector * periodsPerThread * binsPerThread * DMsPerThread) > maxItemsPerThread ) {
+                  break;
+                }
+
                 // Generate kernel
                 cl::Kernel * kernel;
                 std::string * code = PulsarSearch::getFoldingOpenCL(*DMs, *periods, *bins, DMsPerThread, periodsPerThread, binsPerThread, vector, typeName, observation);
