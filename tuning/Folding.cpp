@@ -44,6 +44,7 @@ int main(int argc, char * argv[]) {
 	unsigned int maxItemsPerThread = 0;
 	unsigned int maxColumns = 0;
 	unsigned int maxRows = 0;
+  unsigned int maxVector = 0;
   AstroData::Observation< dataType > observation("FoldingTuning", typeName);
 
 	try {
@@ -58,6 +59,7 @@ int main(int argc, char * argv[]) {
 		maxItemsPerThread = args.getSwitchArgument< unsigned int >("-max_items");
 		maxColumns = args.getSwitchArgument< unsigned int >("-max_columns");
 		maxRows = args.getSwitchArgument< unsigned int >("-max_rows");
+    maxVector = args.getSwitchArgument< unsigned int >("-max_vector");
     observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
 		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
     observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
@@ -65,7 +67,7 @@ int main(int argc, char * argv[]) {
     observation.setFirstPeriod(args.getSwitchArgument< unsigned int >("-first_period"));
     observation.setPeriodStep(args.getSwitchArgument< unsigned int >("-period_step"));
 	} catch ( isa::utils::EmptyCommandLine &err ) {
-		std::cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... -min_threads ... -max_threads ... -max_items ... -max_columns ... -max_rows ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
+		std::cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... -min_threads ... -max_threads ... -max_items ... -max_columns ... -max_rows ... -max_vector ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	} catch ( std::exception &err ) {
 		std::cerr << err.what() << std::endl;
@@ -145,7 +147,7 @@ int main(int argc, char * argv[]) {
 	}
 
 	std::cout << std::fixed << std::endl;
-	std::cout << "# nrDMs nrSamples nrPeriods nrBins firstPeriod periodStep DMsPerBlock periodsPerBlock binsPerBlock DMsPerThread periodsPerThread binsPerThread GFLOP/s err time err" << std::endl << std::endl;
+	std::cout << "# nrDMs nrSamples nrPeriods nrBins firstPeriod periodStep DMsPerBlock periodsPerBlock binsPerBlock DMsPerThread periodsPerThread binsPerThread vector GFLOP/s err time err" << std::endl << std::endl;
 
   for ( std::vector< unsigned int >::iterator DMs = DMsPerBlock.begin(); DMs != DMsPerBlock.end(); ++DMs ) {
     for ( std::vector< unsigned int >::iterator periods = periodsPerBlock.begin(); periods != periodsPerBlock.end(); ++periods ) {
@@ -168,54 +170,59 @@ int main(int argc, char * argv[]) {
               if ( 1 + (2 * periodsPerThread) + binsPerThread + DMsPerThread + (4 * periodsPerThread * binsPerThread * DMsPerThread) + (periodsPerThread * binsPerThread * DMsPerThread) > maxItemsPerThread ) {
                 break;
               }
-              // Generate kernel
-              cl::Kernel * kernel;
-              std::string * code = PulsarSearch::getFoldingOpenCL(*DMs, *periods, *bins, DMsPerThread, periodsPerThread, binsPerThread, typeName, observation);
-
-              try {
-                kernel = isa::OpenCL::compile("folding", *code, "-cl-mad-enable -Werror", *clContext, clDevices->at(clDeviceID));
-              } catch ( isa::OpenCL::OpenCLError &err ) {
-                std::cerr << err.what() << std::endl;
-                continue;
-              }
-
-              cl::NDRange global(observation.getNrPaddedDMs() / DMsPerThread, observation.getNrPeriods() / periodsPerThread, observation.getNrBins() / binsPerThread);
-              cl::NDRange local(*DMs, *periods, *bins);
-
-              kernel->setArg(0, 0);
-              kernel->setArg(1, dedispersedData_d);
-              kernel->setArg(2, foldedData_d);
-              kernel->setArg(3, readCounters_d);
-              kernel->setArg(4, writeCounters_d);
-              kernel->setArg(5, samplesPerBin_d);
-
-              // Warm-up run
-              try {
-                clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local);
-              } catch ( cl::Error &err ) {
-                std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
-                continue;
-              }
-              // Tuning runs
-              double flops = isa::utils::giga(static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
-              isa::utils::Timer timer("Kernel Timer");
-              isa::utils::Stats< double > stats;
-              cl::Event event;
-
-              try {
-                for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
-                  timer.start();
-                  clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, NULL, &event);
-                  event.wait();
-                  timer.stop();
-                  stats.addElement(flops / timer.getLastRunTime());
+              for ( unsigned int vector = 1; vector < maxVector; vector *= 2 ) {
+                if ( observation.getNrPaddedDMs() % (*DMs * DMsPerThread * vector) != 0 ) {
+                  continue;
                 }
-              } catch ( cl::Error &err ) {
-                std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
-                continue;
-              }
+                // Generate kernel
+                cl::Kernel * kernel;
+                std::string * code = PulsarSearch::getFoldingOpenCL(*DMs, *periods, *bins, DMsPerThread, periodsPerThread, binsPerThread, vector, typeName, observation);
 
-              std::cout << observation.getNrDMs() << " " << observation.getNrSamplesPerSecond() << " " << observation.getNrPeriods() << " " << observation.getNrBins() << " " << observation.getFirstPeriod() << " " << observation.getPeriodStep() << " " << *DMs << " " << *periods << " " << *bins << " " << DMsPerThread << " " << periodsPerThread << " " << binsPerThread << " " << std::setprecision(3) << stats.getAverage() << " " << stats.getStdDev() << " " << std::setprecision(6) << timer.getAverageTime() << " " << timer.getStdDev() << std::endl;
+                try {
+                  kernel = isa::OpenCL::compile("folding", *code, "-cl-mad-enable -Werror", *clContext, clDevices->at(clDeviceID));
+                } catch ( isa::OpenCL::OpenCLError &err ) {
+                  std::cerr << err.what() << std::endl;
+                  continue;
+                }
+
+                cl::NDRange global(observation.getNrPaddedDMs() / vector / DMsPerThread, observation.getNrPeriods() / periodsPerThread, observation.getNrBins() / binsPerThread);
+                cl::NDRange local(*DMs, *periods, *bins);
+
+                kernel->setArg(0, 0);
+                kernel->setArg(1, dedispersedData_d);
+                kernel->setArg(2, foldedData_d);
+                kernel->setArg(3, readCounters_d);
+                kernel->setArg(4, writeCounters_d);
+                kernel->setArg(5, samplesPerBin_d);
+
+                // Warm-up run
+                try {
+                  clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local);
+                } catch ( cl::Error &err ) {
+                  std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+                  continue;
+                }
+                // Tuning runs
+                double flops = isa::utils::giga(static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
+                isa::utils::Timer timer("Kernel Timer");
+                isa::utils::Stats< double > stats;
+                cl::Event event;
+
+                try {
+                  for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
+                    timer.start();
+                    clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, NULL, &event);
+                    event.wait();
+                    timer.stop();
+                    stats.addElement(flops / timer.getLastRunTime());
+                  }
+                } catch ( cl::Error &err ) {
+                  std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+                  continue;
+                }
+
+                std::cout << observation.getNrDMs() << " " << observation.getNrSamplesPerSecond() << " " << observation.getNrPeriods() << " " << observation.getNrBins() << " " << observation.getFirstPeriod() << " " << observation.getPeriodStep() << " " << *DMs << " " << *periods << " " << *bins << " " << DMsPerThread << " " << periodsPerThread << " " << binsPerThread << " " << vector << " " << std::setprecision(3) << stats.getAverage() << " " << stats.getStdDev() << " " << std::setprecision(6) << timer.getAverageTime() << " " << timer.getStdDev() << std::endl;
+              }
             }
           }
         }
