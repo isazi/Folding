@@ -167,7 +167,7 @@ int main(int argc, char * argv[]) {
               if ( observation.getNrBins() % (*bins * binsPerThread) != 0 ) {
                 continue;
               }
-              if ( 1 + (2 * periodsPerThread) + binsPerThread + DMsPerThread + (4 * periodsPerThread * binsPerThread * DMsPerThread) + (periodsPerThread * binsPerThread * DMsPerThread) > maxItemsPerThread ) {
+              if ( 1 + (2 * periodsPerThread) + binsPerThread + DMsPerThread + (4 * periodsPerThread * binsPerThread) + (vector * periodsPerThread * binsPerThread * DMsPerThread) > maxItemsPerThread ) {
                 break;
               }
               for ( unsigned int vector = 1; vector < maxVector; vector *= 2 ) {
