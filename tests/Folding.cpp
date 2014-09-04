@@ -154,16 +154,8 @@ int main(int argc, char *argv[]) {
 
   // Run OpenCL kernel and CPU control
   try {
-    cl::NDRange global;
-    cl::NDRange local;
-
-    if ( vector == 1 ) {
-      global = cl::NDRange(observation.getNrPaddedDMs() / nrDMsPerThread, observation.getNrPeriods() / nrPeriodsPerThread, observation.getNrBins() / nrBinsPerThread);
-      local = cl::NDRange(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock);
-    } else {
-      global = cl::NDRange(observation.getNrPaddedDMs() / vector / nrDMsPerThread, observation.getNrPeriods() / nrPeriodsPerThread, observation.getNrBins() / nrBinsPerThread);
-      local = cl::NDRange(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock);
-    }
+    cl::NDRange global = cl::NDRange(observation.getNrPaddedDMs() / vector / nrDMsPerThread, observation.getNrPeriods() / nrPeriodsPerThread, observation.getNrBins() / nrBinsPerThread);
+    cl::NDRange local = cl::NDRange(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock);
 
     kernel->setArg(1, dedispersedData_d);
     kernel->setArg(2, foldedData_d);
