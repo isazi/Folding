@@ -158,11 +158,11 @@ int main(int argc, char *argv[]) {
     cl::NDRange local;
 
     if ( vector == 1 ) {
-      global(observation.getNrPaddedDMs() / nrDMsPerThread, observation.getNrPeriods() / nrPeriodsPerThread, observation.getNrBins() / nrBinsPerThread);
-      local(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock);
+      global = cl::NDRange(observation.getNrPaddedDMs() / nrDMsPerThread, observation.getNrPeriods() / nrPeriodsPerThread, observation.getNrBins() / nrBinsPerThread);
+      local = cl::NDRange(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock);
     } else {
-      global(observation.getNrPaddedDMs() / vector / nrDMsPerThread, observation.getNrPeriods() / nrPeriodsPerThread, observation.getNrBins() / nrBinsPerThread);
-      local(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock);
+      global = cl::NDRange(observation.getNrPaddedDMs() / vector / nrDMsPerThread, observation.getNrPeriods() / nrPeriodsPerThread, observation.getNrBins() / nrBinsPerThread);
+      local = cl::NDRange(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock);
     }
 
     kernel->setArg(1, dedispersedData_d);
