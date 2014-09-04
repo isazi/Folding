@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
   bool print = false;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
+  unsigned int vector = 0;
   unsigned int nrDMsPerBlock = 0;
   unsigned int nrPeriodsPerBlock = 0;
   unsigned int nrBinsPerBlock = 0;
@@ -52,6 +53,7 @@ int main(int argc, char *argv[]) {
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
     observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
+    vector = args.getSwitchArgument< unsigned int >("-vector");
     nrDMsPerBlock = args.getSwitchArgument< unsigned int >("-db");
     nrPeriodsPerBlock = args.getSwitchArgument< unsigned int >("-pb");
     nrBinsPerBlock = args.getSwitchArgument< unsigned int >("-bb");
@@ -69,7 +71,7 @@ int main(int argc, char *argv[]) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception &err ) {
-    std::cerr << "Usage: " << argv[0] << " [-print] -opencl_platform ... -opencl_device ... -padding ... -db ... -pb ... -bb ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [-print] -opencl_platform ... -opencl_device ... -padding ... -vector ... -db ... -pb ... -bb ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	}
 
@@ -138,7 +140,7 @@ int main(int argc, char *argv[]) {
 
   // Generate kernel
   cl::Kernel * kernel;
-  std::string * code = PulsarSearch::getFoldingOpenCL(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock, nrDMsPerThread, nrPeriodsPerThread, nrBinsPerThread, typeName, observation);
+  std::string * code = PulsarSearch::getFoldingOpenCL(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock, nrDMsPerThread, nrPeriodsPerThread, nrBinsPerThread, vector, typeName, observation);
   if ( print ) {
     std::cout << *code << std::endl;
   }
