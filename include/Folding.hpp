@@ -31,7 +31,7 @@ template< typename T > using foldingFunc = void (*)(unsigned int, AstroData::Obs
 // Sequential folding
 template< typename T > void folding(const unsigned int second, const AstroData::Observation< T > & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters);
 // OpenCL folding algorithm
-template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, std::string & dataType, const AstroData::Observation< T > & observation);
+template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, const unsigned int vector, std::string & dataType, const AstroData::Observation< T > & observation);
 // AVX folding algorithm
 std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread);
 // Phi folding algorithm
@@ -65,7 +65,7 @@ template< typename T > void folding(const unsigned int second, const AstroData::
   }
 }
 
-template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, std::string & dataType, const AstroData::Observation< T > & observation) {
+template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, const unsigned int vector, std::string & dataType, const AstroData::Observation< T > & observation) {
   std::string * code = new std::string();
 	std::string nrSamplesPerSecond_s = isa::utils::toString< unsigned int >(observation.getNrSamplesPerSecond());
 	std::string nrPaddedDMs_s  = isa::utils::toString< unsigned int >(observation.getNrPaddedDMs());
@@ -81,7 +81,7 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
 	std::string nrBinsPerThread_s = isa::utils::toString< unsigned int >(nrBinsPerThread);
 
 	// Begin kernel's template
-	*code = "__kernel void folding(const unsigned int second, __global const " + dataType + " * const restrict samples, __global " + dataType + " * const restrict bins, __global const unsigned int * const restrict readCounters, __global unsigned int * const restrict writeCounters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
+  *code = "__kernel void folding(const unsigned int second, __global const " + dataType + " * const restrict samples, __global " + dataType + " * const restrict bins, __global const unsigned int * const restrict readCounters, __global unsigned int * const restrict writeCounters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
     "unsigned int sample = 0;\n"
     "<%DEFS_PERIOD%>"
     "<%DEFS_BIN%>"
@@ -96,12 +96,22 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
 	std::string defsPeriodTemplate = "const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + nrPeriodsPerBlock_s + " * " + nrPeriodsPerThread_s+  ") + get_local_id(1) + (<%PERIOD_NUM%> * " + nrPeriodsPerBlock_s + ");\n"
     "const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n";
 	std::string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
-	std::string defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
+	std::string defsDMTemplate;
+  if ( vector == 1 ) {
+    defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
+  } else {
+    defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + " * " + isa::utils::toString(vector) + ") + (get_local_id(0) * " + isa::utils::toString(vector) + ") + (<%DM_NUM%> * " + nrDMsPerBlock_s + " * " + isa::utils::toString(vector) + ");\n";
+  }
 	std::string defsPeriodBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation.getPadding())) + ")];\n"
 		"const unsigned int offsetp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation.getPadding())) + ") + 1];\n"
 		"const unsigned int pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = readCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>];\n"
     "unsigned int foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n";
-	std::string defsPeriodBinDMTemplate = dataType + " foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = 0;\n";
+  std::string defsPeriodBinDMTemplate;
+  if ( vector == 1 ) {
+    defsPeriodBinDMTemplate = dataType + " foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = 0;\n";
+  } else {
+    defsPeriodBinDMTemplate = dataType + isa::utils::toString(vector) + " foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = 0;\n";
+  }
 	std::string computeTemplate = "if ( samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
     "<%COMPUTE_DM%>"
     "}\n";
@@ -110,9 +120,13 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
     "if ( (sample / "+ nrSamplesPerSecond_s + ") == second ) {\n"
     "sample %= "+ nrSamplesPerSecond_s + ";\n"
     "}\n"
-    "while ( sample < " + nrSamplesPerSecond_s + " ) {\n"
-    "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n"
-    "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
+    "while ( sample < " + nrSamplesPerSecond_s + " ) {\n";
+  if ( vector == 1 ) {
+    computeDMTemplate += "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
+  } else {
+    computeDMTemplate += "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> += vload" + isa::utils::toString(vector) + "(0, &(samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>]));\n";
+  }
+  computeDMTemplate += "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
     "if ( ((foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) == 0 ) {\n"
     "sample += period<%PERIOD_NUM%>Value - (samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> - 1);\n"
     "} else {\n"
@@ -126,8 +140,12 @@ template< typename T > std::string * getFoldingOpenCL(const unsigned int nrDMsPe
     "writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
     "}\n";
   std::string storeDMTemplate ="outputItem = (bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
-    "pValue = bins[outputItem];\n"
-    "bins[outputItem] = ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> * pValue) + (foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)) / (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>);\n";
+    "pValue = bins[outputItem];\n";
+  if ( vector == 1 ) {
+    storeDMTemplate += "bins[outputItem] = ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> * pValue) + (foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)) / (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>);\n";
+  } else {
+    storeDMTemplate += "vstore" + isa::utils::toString(vector) + "(((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> * pValue) + (foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)) / (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>), 0, &(bins[outputItem]));\n";
+  }
 	// End kernel's template
 
 	std::string * defsPeriod_s = new std::string();
