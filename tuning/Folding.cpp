@@ -154,6 +154,8 @@ int main(int argc, char * argv[]) {
       for ( std::vector< unsigned int >::iterator bins = binsPerBlock.begin(); bins != binsPerBlock.end(); ++bins ) {
         if ( (*DMs * *periods * *bins) > maxThreadsPerBlock ) {
           break;
+        } else if ( *periods * *bins > maxRows ) {
+          break;
         }
         for ( unsigned int DMsPerThread = 1; DMsPerThread <= maxItemsPerThread; DMsPerThread++ ) {
           if ( observation.getNrPaddedDMs() % (*DMs * DMsPerThread) != 0 ) {
