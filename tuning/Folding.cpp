@@ -94,17 +94,17 @@ int main(int argc, char * argv[]) {
   std::vector< unsigned int > writeCounters = std::vector< unsigned int >(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
   cl::Buffer writeCounters_d;
   try {
-    samplesPerBin_d = cl::Buffer(*clContext, CL_MEM_READ_ONLY, samplesPerBin->size() * sizeof(unsigned int), NULL, NULL);
-    dedispersedData_d = cl::Buffer(*clContext, CL_MEM_READ_WRITE, dedispersedData.size() * sizeof(dataType), NULL, NULL);
-    foldedData_d = cl::Buffer(*clContext, CL_MEM_READ_WRITE, foldedData.size() * sizeof(dataType), NULL, NULL);
-    readCounters_d = cl::Buffer(*clContext, CL_MEM_READ_WRITE, readCounters.size() * sizeof(unsigned int), NULL, NULL);
-    writeCounters_d = cl::Buffer(*clContext, CL_MEM_READ_WRITE, writeCounters.size() * sizeof(unsigned int), NULL, NULL);
+    samplesPerBin_d = cl::Buffer(*clContext, CL_MEM_READ_ONLY, samplesPerBin->size() * sizeof(unsigned int), 0, 0);
+    dedispersedData_d = cl::Buffer(*clContext, CL_MEM_READ_WRITE, dedispersedData.size() * sizeof(dataType), 0, 0);
+    foldedData_d = cl::Buffer(*clContext, CL_MEM_READ_WRITE, foldedData.size() * sizeof(dataType), 0, 0);
+    readCounters_d = cl::Buffer(*clContext, CL_MEM_READ_WRITE, readCounters.size() * sizeof(unsigned int), 0, 0);
+    writeCounters_d = cl::Buffer(*clContext, CL_MEM_READ_WRITE, writeCounters.size() * sizeof(unsigned int), 0, 0);
   } catch ( cl::Error &err ) {
-    std::cerr << "OpenCL error allocating memory: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+    std::cerr << "OpenCL error allocating memory: " << isa::utils::toString(err.err()) << "." << std::endl;
     return 1;
   }
 
-	srand(time(NULL));
+	srand(time(0));
   for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
     for ( unsigned int DM = 0; DM < observation.getNrDMs(); DM++ ) {
       dedispersedData[(sample * observation.getNrPaddedDMs()) + DM] = static_cast< dataType >(rand() % 10);
@@ -122,7 +122,7 @@ int main(int argc, char * argv[]) {
     clQueues->at(clDeviceID)[0].enqueueWriteBuffer(readCounters_d, CL_FALSE, 0, readCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters.data()));
     clQueues->at(clDeviceID)[0].enqueueWriteBuffer(writeCounters_d, CL_FALSE, 0, writeCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters.data()));
   } catch ( cl::Error &err ) {
-    std::cerr << "OpenCL error H2D transfer: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+    std::cerr << "OpenCL error H2D transfer: " << isa::utils::toString(err.err()) << "." << std::endl;
     return 1;
   }
 
@@ -178,6 +178,10 @@ int main(int argc, char * argv[]) {
                 }
 
                 // Generate kernel
+                double flops = isa::utils::giga(static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
+                isa::utils::Timer timer("Kernel Timer");
+                isa::utils::Stats< double > stats;
+                cl::Event event;
                 cl::Kernel * kernel;
                 std::string * code = PulsarSearch::getFoldingOpenCL(*DMs, *periods, *bins, DMsPerThread, periodsPerThread, binsPerThread, vector, typeName, observation);
 
@@ -200,27 +204,24 @@ int main(int argc, char * argv[]) {
 
                 // Warm-up run
                 try {
-                  clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local);
+                  clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, 0, &event);
+                  event.wait();
                 } catch ( cl::Error &err ) {
-                  std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+                  std::cerr << "OpenCL error kernel execution: " << isa::utils::toString(err.err()) << "." << std::endl;
                   continue;
                 }
                 // Tuning runs
-                double flops = isa::utils::giga(static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
-                isa::utils::Timer timer("Kernel Timer");
-                isa::utils::Stats< double > stats;
-                cl::Event event;
 
                 try {
                   for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
                     timer.start();
-                    clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, NULL, &event);
+                    clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, 0, &event);
                     event.wait();
                     timer.stop();
                     stats.addElement(flops / timer.getLastRunTime());
                   }
                 } catch ( cl::Error &err ) {
-                  std::cerr << "OpenCL error kernel execution: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
+                  std::cerr << "OpenCL error kernel execution: " << isa::utils::toString(err.err()) << "." << std::endl;
                   continue;
                 }
 
