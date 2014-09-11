@@ -211,7 +211,6 @@ int main(int argc, char * argv[]) {
                   continue;
                 }
                 // Tuning runs
-
                 try {
                   for ( unsigned int iteration = 0; iteration < nrIterations; iteration++ ) {
                     timer.start();
