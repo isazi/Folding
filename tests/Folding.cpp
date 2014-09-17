@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
     dedispersedData_c.at(second) = new std::vector< dataType >(observation.getNrDMs() * observation.getNrSamplesPerPaddedSecond());
   }
   cl::Buffer dedispersedData_d;
-  std::vector< dataType > foldedData_c = std::vector< dataType >(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
-  std::vector< dataType > foldedData = std::vector< dataType >(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrPaddedBins());
+  std::vector< dataType > foldedData_c = std::vector< dataType >(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrPaddedBins());
+  std::vector< dataType > foldedData = std::vector< dataType >(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
   cl::Buffer foldedData_d;
   std::vector< unsigned int > counters_c = std::vector< unsigned int >(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrPaddedBins());
   std::vector< unsigned int > readCounters = std::vector< unsigned int >(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
