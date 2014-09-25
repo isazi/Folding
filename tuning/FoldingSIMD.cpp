@@ -39,7 +39,7 @@ int main(int argc, char * argv[]) {
   bool phi = false;
 	unsigned int nrIterations = 0;
 	unsigned int maxItemsPerThread = 0;
-  AstroData::Observation< float > observation("FoldingTuning", "float");
+  AstroData::Observation observation;
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
@@ -53,11 +53,9 @@ int main(int argc, char * argv[]) {
 		observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
 		maxItemsPerThread = args.getSwitchArgument< unsigned int >("-max_items");
     observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
-		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
-    observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
+    observation.setDMRange(args.getSwitchArgument< unsigned int >("-dms"), 0.0, 0.0);
+    observation.setPeriodRange(args.getSwitchArgument< unsigned int >("-periods"), args.getSwitchArgument< unsigned int >("-first_period"), args.getSwitchArgument< unsigned int >("-period_step"));
     observation.setNrBins(args.getSwitchArgument< unsigned int >("-bins"));
-    observation.setFirstPeriod(args.getSwitchArgument< unsigned int >("-first_period"));
-    observation.setPeriodStep(args.getSwitchArgument< unsigned int >("-period_step"));
 	} catch ( isa::Exceptions::EmptyCommandLine &err ) {
 		std::cerr << argv[0] << " [-avx] [-phi] -iterations ... -padding ... -max_items ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
@@ -111,7 +109,7 @@ int main(int argc, char * argv[]) {
 
         // Tuning runs
         double flops = isa::utils::giga(static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
-        isa::utils::Timer timer("Kernel Timer");
+        isa::utils::Timer timer;
         isa::utils::Stats< double > stats;
         PulsarSearch::foldingFunc< float > folding = 0;
 

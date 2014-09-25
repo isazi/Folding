@@ -45,7 +45,7 @@ int main(int argc, char * argv[]) {
 	unsigned int maxColumns = 0;
 	unsigned int maxRows = 0;
   unsigned int maxVector = 0;
-  AstroData::Observation< dataType > observation("FoldingTuning", typeName);
+  AstroData::Observation observation;
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
@@ -61,11 +61,9 @@ int main(int argc, char * argv[]) {
 		maxRows = args.getSwitchArgument< unsigned int >("-max_rows");
     maxVector = args.getSwitchArgument< unsigned int >("-max_vector");
     observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
-		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
-    observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
+    observation.setDMRange(args.getSwitchArgument< unsigned int >("-dms"), 0.0, 0.0);
+    observation.setPeriodRange(args.getSwitchArgument< unsigned int >("-periods"), args.getSwitchArgument< unsigned int >("-first_period"), args.getSwitchArgument< unsigned int >("-period_step"));
     observation.setNrBins(args.getSwitchArgument< unsigned int >("-bins"));
-    observation.setFirstPeriod(args.getSwitchArgument< unsigned int >("-first_period"));
-    observation.setPeriodStep(args.getSwitchArgument< unsigned int >("-period_step"));
 	} catch ( isa::utils::EmptyCommandLine &err ) {
 		std::cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... -min_threads ... -max_threads ... -max_items ... -max_columns ... -max_rows ... -max_vector ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
@@ -179,7 +177,7 @@ int main(int argc, char * argv[]) {
 
                 // Generate kernel
                 double flops = isa::utils::giga(static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
-                isa::utils::Timer timer("Kernel Timer");
+                isa::utils::Timer timer;
                 isa::utils::Stats< double > stats;
                 cl::Event event;
                 cl::Kernel * kernel;
