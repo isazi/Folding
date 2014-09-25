@@ -31,7 +31,7 @@
 #include <Stats.hpp>
 
 typedef float dataType;
-string typeName("float");
+std::string typeName("float");
 
 
 int main(int argc, char * argv[]) {
