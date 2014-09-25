@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
   unsigned int nrPeriodsPerThread = 0;
   unsigned int nrBinsPerThread = 0;
 	long long unsigned int wrongSamples = 0;
-	AstroData::Observation< float > observation("FoldingTest", "float");
+	AstroData::Observation observation;
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
@@ -53,11 +53,9 @@ int main(int argc, char *argv[]) {
     nrBinsPerThread = args.getSwitchArgument< unsigned int >("-bt");
     observation.setNrSeconds(args.getSwitchArgument< unsigned int >("-seconds"));
     observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
-		observation.setNrDMs(args.getSwitchArgument< unsigned int >("-dms"));
-    observation.setNrPeriods(args.getSwitchArgument< unsigned int >("-periods"));
+    observation.setDMRange(args.getSwitchArgument< unsigned int >("-dms"), 0.0, 0.0);
+    observation.setPeriodRange(args.getSwitchArgument< unsigned int >("-periods"), args.getSwitchArgument< unsigned int >("-first_period"), args.getSwitchArgument< unsigned int >("-period_step"));
     observation.setNrBins(args.getSwitchArgument< unsigned int >("-bins"));
-    observation.setFirstPeriod(args.getSwitchArgument< unsigned int >("-first_period"));
-    observation.setPeriodStep(args.getSwitchArgument< unsigned int >("-period_step"));
 	} catch  ( isa::Exceptions::SwitchNotFound &err ) {
     std::cerr << err.what() << std::endl;
     return 1;
