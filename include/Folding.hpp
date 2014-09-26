@@ -31,7 +31,7 @@ template< typename T > using foldingFunc = void (*)(unsigned int, AstroData::Obs
 // Sequential folding
 template< typename T > void folding(const unsigned int second, const AstroData::Observation & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters);
 // OpenCL folding algorithm
-std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, const unsigned int vector, std::string & dataType, const AstroData::Observation & observation);
+std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, const unsigned int vector, const std::string & dataType, const AstroData::Observation & observation);
 // AVX folding algorithm
 std::string * getFoldingAVX(const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread);
 // Phi folding algorithm
@@ -65,7 +65,7 @@ template< typename T > void folding(const unsigned int second, const AstroData::
   }
 }
 
-std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, const unsigned int vector, std::string & dataType, const AstroData::Observation & observation) {
+std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned int nrPeriodsPerBlock, const unsigned int nrBinsPerBlock, const unsigned int nrDMsPerThread, const unsigned int nrPeriodsPerThread, const unsigned int nrBinsPerThread, const unsigned int vector, const std::string & dataType, const AstroData::Observation & observation) {
   std::string * code = new std::string();
 	std::string nrSamplesPerSecond_s = isa::utils::toString< unsigned int >(observation.getNrSamplesPerSecond());
 	std::string nrPaddedDMs_s  = isa::utils::toString< unsigned int >(observation.getNrPaddedDMs());
