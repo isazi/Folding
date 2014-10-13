@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
     for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
       for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
-        for ( unsigned int sample = 0; second < observation.getNrSamplesPerSecond(); sample++ ) {
+        for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
           if ( sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] != parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] ) {
             std::cout << "DM: " << dm << ", ";
             std::cout << "Period: " << period << ", ";
