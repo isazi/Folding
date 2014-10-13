@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 
       for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
         for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
-          unsigned int sample = samplesPerBin->at((period * 2 * observation.getNrPaddedBins()) + (bin * 2) + 1) + ((parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] / samplesPerBin->at((period * 2 * observation.getNrPaddedBins()) + (bin * 2))) * periodValue) + (parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * 2 * observation.getNrPaddedBins()) + (bin * 2)));
+          unsigned int sample = samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())) + 1) + ((parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] / samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())))) * periodValue) + (parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))));
 
           if ( (sample / observation.getNrSamplesPerSecond()) == second ) {
             sample %= observation.getNrSamplesPerSecond();
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
           while ( sample < observation.getNrSamplesPerSecond() ) {
             parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] = bin;
             parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] += 1;
-            if ( parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * 2 * observation.getNrPaddedBins()) + (bin * 2)) == 0 ) {
+            if ( parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) == 0 ) {
               sample += periodValue;
             } else {
               sample++;
