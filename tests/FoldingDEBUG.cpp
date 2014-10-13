@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
             parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] = bin;
             parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] += 1;
             if ( parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) == 0 ) {
-              sample += periodValue;
+              sample += periodValue - (samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) - 1);
             } else {
               sample++;
             }
