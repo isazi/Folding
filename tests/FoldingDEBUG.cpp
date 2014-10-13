@@ -31,8 +31,6 @@ std::string typeName("float");
 
 
 int main(int argc, char *argv[]) {
-  bool print = false;
-	long long unsigned int wrongSamples = 0;
 	AstroData::Observation observation;
 
 	try {
@@ -47,7 +45,7 @@ int main(int argc, char *argv[]) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception &err ) {
-    std::cerr << "Usage: " << argv[0] << " -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " -seconds ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	}
 
