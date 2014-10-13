@@ -31,10 +31,12 @@ std::string typeName("float");
 
 
 int main(int argc, char *argv[]) {
+  bool print = false;
 	AstroData::Observation observation;
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
+    print = args.getSwitch("-print");
     observation.setPadding(1);
     observation.setNrSeconds(args.getSwitchArgument< unsigned int >("-seconds"));
     observation.setNrSamplesPerSecond(args.getSwitchArgument< unsigned int >("-samples"));
@@ -45,7 +47,7 @@ int main(int argc, char *argv[]) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception &err ) {
-    std::cerr << "Usage: " << argv[0] << " -seconds ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [-print] -seconds ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	}
 
@@ -104,6 +106,13 @@ int main(int argc, char *argv[]) {
       for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
         for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
           if ( sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] != parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] ) {
+            std::cout << "DM: " << dm << ", ";
+            std::cout << "Period: " << period << ", ";
+            std::cout << "Second: " << second << ", ";
+            std::cout << "Sample: " << sample << ", ";
+            std::cout << "Bin (seq): " << sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] << ", ";
+            std::cout << "Bin (par): " << parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] << std::endl;
+          } else if ( print ) {
             std::cout << "DM: " << dm << ", ";
             std::cout << "Period: " << period << ", ";
             std::cout << "Second: " << second << ", ";
