@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
       const unsigned int periodValue = observation.getFirstPeriod() + (period * observation.getPeriodStep());
 
       for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
-        for ( unsigned int sample = 0; second < observation.getNrSamplesPerSecond(); sample++ ) {
+        for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
           const unsigned int globalSample = (second * observation.getNrSamplesPerSecond()) + sample;
           const float phase = (globalSample / static_cast< float >(periodValue)) - (globalSample / periodValue);
           const unsigned int bin = static_cast< unsigned int >(phase * static_cast< float >(observation.getNrBins()));
