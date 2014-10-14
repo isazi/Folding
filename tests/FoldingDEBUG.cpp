@@ -54,8 +54,12 @@ int main(int argc, char *argv[]) {
   std::vector< unsigned int > * samplesPerBin = PulsarSearch::getSamplesPerBin(observation);
 
   // Allocate memory
-  std::vector< unsigned int > sequentialMap(static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond());
-  std::vector< unsigned int > parallelMap(sequentialMap.size());
+  std::vector< std::vector< unsigned int > > sequentialMap(observation.getNrSeconds());
+  std::vector< std::vector< unsigned int > > parallelMap(observation.getNrSeconds());
+  for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
+    sequentialMap[second] = std::vector< unsigned int >(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
+    parallelMap[second] = std::vector< unsigned int >(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
+  }
   std::vector< unsigned int > parallelCounter(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrBins());
 
   std::fill(parallelCounter.begin(), parallelCounter.end(), 0);
@@ -71,7 +75,7 @@ int main(int argc, char *argv[]) {
           const float phase = (globalSample / static_cast< float >(periodValue)) - (globalSample / periodValue);
           const unsigned int bin = static_cast< unsigned int >(phase * static_cast< float >(observation.getNrBins()));
 
-          sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + globalSample] = bin;
+          sequentialMap[second][(dm * observation.getNrPeriods() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSamplesPerSecond()) + sample] = bin;
         }
       }
     }
@@ -90,7 +94,7 @@ int main(int argc, char *argv[]) {
             sample %= observation.getNrSamplesPerSecond();
           }
           while ( sample < observation.getNrSamplesPerSecond() ) {
-            parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] = bin;
+            parallelMap[second][(dm * observation.getNrPeriods() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSamplesPerSecond()) + sample] = bin;
             parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] += 1;
             if ( parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) == 0 ) {
               sample += periodValue - (samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) - 1);
@@ -107,20 +111,20 @@ int main(int argc, char *argv[]) {
     for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
       for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
         for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
-          if ( sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] != parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] ) {
+          if ( sequentialMap[second][(dm * observation.getNrPeriods() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSamplesPerSecond()) + sample] != parallelMap[second][(dm * observation.getNrPeriods() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSamplesPerSecond()) + sample] ) {
             std::cout << "DM: " << dm << ", ";
             std::cout << "Period: " << period << ", ";
             std::cout << "Second: " << second << ", ";
             std::cout << "Sample: " << sample << ", ";
-            std::cout << "Bin (seq): " << sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] << ", ";
-            std::cout << "Bin (par): " << parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] << std::endl;
+            std::cout << "Bin (seq): " << sequentialMap[second][(dm * observation.getNrPeriods() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSamplesPerSecond()) + sample] << ", ";
+            std::cout << "Bin (par): " << parallelMap[second][(dm * observation.getNrPeriods() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSamplesPerSecond()) + sample] << std::endl;
           } else if ( print ) {
             std::cout << "DM: " << dm << ", ";
             std::cout << "Period: " << period << ", ";
             std::cout << "Second: " << second << ", ";
             std::cout << "Sample: " << sample << ", ";
-            std::cout << "Bin (seq): " << sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] << ", ";
-            std::cout << "Bin (par): " << parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] << std::endl;
+            std::cout << "Bin (seq): " << sequentialMap[second][(dm * observation.getNrPeriods() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSamplesPerSecond()) + sample] << ", ";
+            std::cout << "Bin (par): " << parallelMap[second][(dm * observation.getNrPeriods() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSamplesPerSecond()) + sample] << std::endl;
           }
         }
       }
