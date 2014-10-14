@@ -60,9 +60,11 @@ int main(int argc, char *argv[]) {
     sequentialMap[second] = std::vector< unsigned int >(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
     parallelMap[second] = std::vector< unsigned int >(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
   }
-  std::vector< unsigned int > parallelCounter(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrBins());
+  std::vector< unsigned int > parallelCounter0(observation.getNrPeriods() * observation.getNrBins());
+  std::vector< unsigned int > parallelCounter1(observation.getNrPeriods() * observation.getNrBins());
 
-  std::fill(parallelCounter.begin(), parallelCounter.end(), 0);
+  std::fill(parallelCounter0.begin(), parallelCounter0.end(), 0);
+  std::fill(parallelCounter1.begin(), parallelCounter1.end(), 0);
 
   // Sequential
   for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
@@ -88,18 +90,33 @@ int main(int argc, char *argv[]) {
 
       for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
         for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
-          unsigned int sample = samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())) + 1) + ((parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] / samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())))) * periodValue) + (parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))));
+          unsigned int sample = 0;
+
+          if ( second % 2 == 0 ) {
+            sample = samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())) + 1) + ((parallelCounter0[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] / samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())))) * periodValue) + (parallelCounter0[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))));
+          } else {
+            sample = samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())) + 1) + ((parallelCounter1[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] / samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding())))) * periodValue) + (parallelCounter1[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))));
+          }
 
           if ( (sample / observation.getNrSamplesPerSecond()) == second ) {
             sample %= observation.getNrSamplesPerSecond();
           }
           while ( sample < observation.getNrSamplesPerSecond() ) {
             parallelMap[second][(dm * observation.getNrPeriods() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSamplesPerSecond()) + sample] = bin;
-            parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] += 1;
-            if ( parallelCounter[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) == 0 ) {
-              sample += periodValue - (samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) - 1);
+            if ( second % 2 == 0 ) {
+              parallelCounter1[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] += 1;
+              if ( parallelCounter1[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) == 0 ) {
+                sample += periodValue - (samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) - 1);
+              } else {
+                sample++;
+              }
             } else {
-              sample++;
+              parallelCounter0[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] += 1;
+              if ( parallelCounter0[(dm * observation.getNrPeriods() * observation.getNrBins()) + (period * observation.getNrBins()) + bin] % samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) == 0 ) {
+                sample += periodValue - (samplesPerBin->at((period * observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + (bin * isa::utils::pad(2, observation.getPadding()))) - 1);
+              } else {
+                sample++;
+              }
             }
           }
         }
