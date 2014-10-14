@@ -99,9 +99,9 @@ int main(int argc, char *argv[]) {
   std::vector< dataType > foldedData = std::vector< dataType >(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
   cl::Buffer foldedData_d;
   std::vector< unsigned int > counters_c = std::vector< unsigned int >(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrPaddedBins());
-  std::vector< unsigned int > readCounters = std::vector< unsigned int >(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
+  std::vector< unsigned int > readCounters = std::vector< unsigned int >(observation.getNrPeriods() * observation.getNrPaddedBins());
   cl::Buffer readCounters_d;
-  std::vector< unsigned int > writeCounters = std::vector< unsigned int >(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
+  std::vector< unsigned int > writeCounters = std::vector< unsigned int >(observation.getNrPeriods() * observation.getNrPaddedBins());
   cl::Buffer writeCounters_d;
   try {
     samplesPerBin_d = cl::Buffer(*clContext, CL_MEM_READ_ONLY, samplesPerBin->size() * sizeof(unsigned int), NULL, NULL);
@@ -180,6 +180,11 @@ int main(int argc, char *argv[]) {
       PulsarSearch::folding(second, observation, *(dedispersedData_c.at(second)), foldedData_c, counters_c);
     }
     clQueues->at(clDeviceID)[0].enqueueReadBuffer(foldedData_d, CL_TRUE, 0, foldedData.size() * sizeof(dataType), reinterpret_cast< void * >(foldedData.data()));
+    if ( observation.getNrSeconds() % 2 == 0 ) {
+      clQueues->at(clDeviceID)[0].enqueueReadBuffer(readCounters_d, CL_TRUE, 0, readCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters.data()));
+    } else {
+      clQueues->at(clDeviceID)[0].enqueueReadBuffer(writeCounters_d, CL_TRUE, 0, writeCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters.data()));
+    }
   } catch ( cl::Error &err ) {
     std::cerr << "OpenCL error: " << isa::utils::toString< cl_int >(err.err()) << "." << std::endl;
     return 1;
@@ -194,7 +199,13 @@ int main(int argc, char *argv[]) {
             std::cout << "Period: " << period << ", ";
             std::cout << "Bin: " << bin << ", ";
             std::cout << "Value (seq): " << foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << ", ";
-            std::cout << "Value (par): " << foldedData[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << std::endl;
+            std::cout << "Counter (seq): " << counters_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << ", ";
+            std::cout << "Value (par): " << foldedData[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << ", ";
+            if ( observation.getNrSeconds() % 2 == 0 ) {
+              std::cout << "Counter (par): " << readCounters[(period * observation.getNrPaddedBins()) + bin] << std::endl;
+            } else {
+              std::cout << "Counter (par): " << writeCounters[(period * observation.getNrPaddedBins()) + bin] << std::endl;
+            }
           }
           wrongSamples++;
         }
