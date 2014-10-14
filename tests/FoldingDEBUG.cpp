@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
 
   std::fill(parallelCounter.begin(), parallelCounter.end(), 0);
 
+  // Sequential
   for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
     for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
       const unsigned int periodValue = observation.getFirstPeriod() + (period * observation.getPeriodStep());
@@ -76,6 +77,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Parallel
   for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
     for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
       const unsigned int periodValue = observation.getFirstPeriod() + (period * observation.getPeriodStep());
@@ -105,20 +107,20 @@ int main(int argc, char *argv[]) {
     for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
       for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
         for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
-          if ( sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] != parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] ) {
+          if ( sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] != parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] ) {
             std::cout << "DM: " << dm << ", ";
             std::cout << "Period: " << period << ", ";
             std::cout << "Second: " << second << ", ";
             std::cout << "Sample: " << sample << ", ";
-            std::cout << "Bin (seq): " << sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] << ", ";
-            std::cout << "Bin (par): " << parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] << std::endl;
+            std::cout << "Bin (seq): " << sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] << ", ";
+            std::cout << "Bin (par): " << parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] << std::endl;
           } else if ( print ) {
             std::cout << "DM: " << dm << ", ";
             std::cout << "Period: " << period << ", ";
             std::cout << "Second: " << second << ", ";
             std::cout << "Sample: " << sample << ", ";
-            std::cout << "Bin (seq): " << sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] << ", ";
-            std::cout << "Bin (par): " << parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + sample] << std::endl;
+            std::cout << "Bin (seq): " << sequentialMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] << ", ";
+            std::cout << "Bin (par): " << parallelMap[(dm * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (period * observation.getNrSeconds() * observation.getNrSamplesPerSecond()) + (second * observation.getNrSamplesPerSecond()) + sample] << std::endl;
           }
         }
       }
