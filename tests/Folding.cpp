@@ -184,8 +184,9 @@ int main(int argc, char *argv[]) {
           if ( print ) {
             std::cout << "DM: " << dm << ", ";
             std::cout << "Period: " << period << ", ";
-            std::cout << "Bin (seq): " << foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << ", ";
-            std::cout << "Bin (par): " << foldedData[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << std::endl;
+            std::cout << "Bin: " << bin << ", ";
+            std::cout << "Value (seq): " << foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << ", ";
+            std::cout << "Value (par): " << foldedData[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << std::endl;
           }
           wrongSamples++;
         }
