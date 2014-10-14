@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   std::vector< unsigned int > * samplesPerBin = PulsarSearch::getSamplesPerBin(observation);
 
   // Allocate memory
-  std::vector< unsigned int > sequentialMap(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond());
+  std::vector< unsigned int > sequentialMap(static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrSeconds() * observation.getNrSamplesPerSecond());
   std::vector< unsigned int > parallelMap(sequentialMap.size());
   std::vector< unsigned int > parallelCounter(observation.getNrDMs() * observation.getNrPeriods() * observation.getNrBins());
 
