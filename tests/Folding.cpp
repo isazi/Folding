@@ -181,6 +181,12 @@ int main(int argc, char *argv[]) {
     for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
       for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
         if ( ! isa::utils::same(foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin], foldedData[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + dm]) ) {
+          if ( print ) {
+            std::cout << "DM: " << dm << ", ";
+            std::cout << "Period: " << period << ", ";
+            std::cout << "Bin (seq): " << foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << ", ";
+            std::cout << "Bin (par): " << foldedData[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin] << std::endl;
+          }
           wrongSamples++;
         }
       }
