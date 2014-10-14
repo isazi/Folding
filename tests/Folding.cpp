@@ -34,6 +34,7 @@ std::string typeName("float");
 
 
 int main(int argc, char *argv[]) {
+  bool random = false;
   bool printCode = false;
   bool printErrors = false;
 	unsigned int clPlatformID = 0;
@@ -50,6 +51,7 @@ int main(int argc, char *argv[]) {
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
+    random = args.getSwitch("-random");
     printCode = args.getSwitch("-print_code");
     printErrors = args.getSwitch("-print_errors");
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
@@ -71,7 +73,7 @@ int main(int argc, char *argv[]) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception &err ) {
-    std::cerr << "Usage: " << argv[0] << " [-print_code] [-print_errors] -opencl_platform ... -opencl_device ... -padding ... -vector ... -db ... -pb ... -bb ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [-random] [-print_code] [-print_errors] -opencl_platform ... -opencl_device ... -padding ... -vector ... -db ... -pb ... -bb ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	}
 
@@ -112,7 +114,11 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-	srand(time(NULL));
+  if ( random ) {
+    srand(time(NULL));
+  } else {
+    srand(42);
+  }
   for ( unsigned int second = 0; second < observation.getNrSeconds(); second++ ) {
     for ( unsigned int sample = 0; sample < observation.getNrSamplesPerSecond(); sample++ ) {
       for ( unsigned int dm = 0; dm < observation.getNrDMs(); dm++ ) {
