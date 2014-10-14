@@ -34,7 +34,8 @@ std::string typeName("float");
 
 
 int main(int argc, char *argv[]) {
-  bool print = false;
+  bool printCode = false;
+  bool printErrors = false;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
   unsigned int vector = 0;
@@ -49,7 +50,8 @@ int main(int argc, char *argv[]) {
 
 	try {
     isa::utils::ArgumentList args(argc, argv);
-    print = args.getSwitch("-print");
+    printCode = args.getSwitch("-print_code");
+    printErrors = args.getSwitch("-print_errors");
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
     observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
@@ -69,7 +71,7 @@ int main(int argc, char *argv[]) {
     std::cerr << err.what() << std::endl;
     return 1;
   }catch ( std::exception &err ) {
-    std::cerr << "Usage: " << argv[0] << " [-print] -opencl_platform ... -opencl_device ... -padding ... -vector ... -db ... -pb ... -bb ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
+    std::cerr << "Usage: " << argv[0] << " [-print_code] [-print_errors] -opencl_platform ... -opencl_device ... -padding ... -vector ... -db ... -pb ... -bb ... -dt ... -pt ... -bt ... -seconds .... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	}
 
@@ -139,7 +141,7 @@ int main(int argc, char *argv[]) {
   // Generate kernel
   cl::Kernel * kernel;
   std::string * code = PulsarSearch::getFoldingOpenCL(nrDMsPerBlock, nrPeriodsPerBlock, nrBinsPerBlock, nrDMsPerThread, nrPeriodsPerThread, nrBinsPerThread, vector, typeName, observation);
-  if ( print ) {
+  if ( printCode ) {
     std::cout << *code << std::endl;
   }
 
@@ -181,7 +183,7 @@ int main(int argc, char *argv[]) {
     for ( unsigned int period = 0; period < observation.getNrPeriods(); period++ ) {
       for ( unsigned int bin = 0; bin < observation.getNrBins(); bin++ ) {
         if ( ! isa::utils::same(foldedData_c[(dm * observation.getNrPeriods() * observation.getNrPaddedBins()) + (period * observation.getNrPaddedBins()) + bin], foldedData[(bin * observation.getNrPeriods() * observation.getNrPaddedDMs()) + (period * observation.getNrPaddedDMs()) + dm]) ) {
-          if ( print ) {
+          if ( printErrors ) {
             std::cout << "DM: " << dm << ", ";
             std::cout << "Period: " << period << ", ";
             std::cout << "Bin: " << bin << ", ";
