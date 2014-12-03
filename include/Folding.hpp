@@ -107,26 +107,27 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
     defsPeriodBinDMTemplate = dataType + isa::utils::toString(vector) + " foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = 0;\n";
   }
 	std::string computeTemplate = "if ( samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
-    "<%COMPUTE_DM%>"
-    "}\n";
-  std::string computeDMTemplate = "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
+    "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
     "sample = offsetp<%PERIOD_NUM%>b<%BIN_NUM%> + ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
     "if ( (sample / "+ nrSamplesPerSecond_s + ") == second ) {\n"
     "sample %= "+ nrSamplesPerSecond_s + ";\n"
     "}\n"
-    "while ( sample < " + nrSamplesPerSecond_s + " ) {\n";
-  if ( vector == 1 ) {
-    computeDMTemplate += "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
-  } else {
-    computeDMTemplate += "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> += vload" + isa::utils::toString(vector) + "(0, &(samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>]));\n";
-  }
-  computeDMTemplate += "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
+    "while ( sample < " + nrSamplesPerSecond_s + " ) {\n"
+    "<%COMPUTE_DM%>"
+    "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>++;\n"
     "if ( ((foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + pCounterp<%PERIOD_NUM%>b<%BIN_NUM%>) % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) == 0 ) {\n"
     "sample += period<%PERIOD_NUM%>Value - (samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> - 1);\n"
     "} else {\n"
     "sample++;\n"
     "}\n"
+    "}\n"
     "}\n";
+  std::string computeDMTemplate;
+  if ( vector == 1 ) {
+    computeDMTemplate += "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
+  } else {
+    computeDMTemplate += "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> += vload" + isa::utils::toString(vector) + "(0, &(samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>]));\n";
+  }
 	std::string storeTemplate = "if ( foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
     "unsigned int outputItem = 0;\n"
     + dataType + " pValue = 0;\n"
