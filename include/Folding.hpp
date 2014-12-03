@@ -226,10 +226,6 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
       temp = isa::utils::replace(temp, "<%COMPUTE_DM%>", *computeDM_s, true);
       compute_s->append(*temp);
       delete temp;
-      temp = isa::utils::replace(&storeTemplate, "<%PERIOD_NUM%>", period_s);
-      temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
-      store_s->append(*temp);
-      delete temp;
     }
   }
   code = isa::utils::replace(code, "<%DEFS_PERIOD%>", *defsPeriod_s, true);
@@ -238,7 +234,6 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
   code = isa::utils::replace(code, "<%DEFS_PERIOD_BIN%>", *defsPeriodBin_s, true);
   code = isa::utils::replace(code, "<%DEFS_PERIOD_BIN_DM%>", *defsPeriodBinDM_s, true);
   code = isa::utils::replace(code, "<%COMPUTE%>", *compute_s, true);
-  code = isa::utils::replace(code, "<%STORE%>", *store_s, true);
 
   return code;
 }
