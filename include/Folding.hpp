@@ -123,7 +123,9 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
     "<%STORE_DM%>"
     "}\n"
     "}\n"
-    "writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n";
+    "if ( get_local_id(0) == 0) {\n"
+    "writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n"
+    "}\n";
   std::string computeDMTemplate;
   if ( vector == 1 ) {
     computeDMTemplate += "foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> += samples[(sample * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>];\n";
