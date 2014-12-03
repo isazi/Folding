@@ -107,7 +107,6 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
     defsPeriodBinDMTemplate = dataType + isa::utils::toString(vector) + " foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%> = 0;\n";
   }
 	std::string computeTemplate = "if ( samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> > 0 ) {\n"
-    "foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%> = 0;\n"
     "sample = offsetp<%PERIOD_NUM%>b<%BIN_NUM%> + ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> / samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>) * period<%PERIOD_NUM%>Value) + (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> % samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%>);\n"
     "if ( (sample / "+ nrSamplesPerSecond_s + ") == second ) {\n"
     "sample %= "+ nrSamplesPerSecond_s + ";\n"
