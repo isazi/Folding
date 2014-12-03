@@ -73,8 +73,6 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
 	std::string firstPeriod_s = isa::utils::toString< unsigned int >(observation.getFirstPeriod());
 	std::string periodStep_s = isa::utils::toString< unsigned int >(observation.getPeriodStep());
 	std::string nrPaddedBins_s = isa::utils::toString< unsigned int >(observation.getNrPaddedBins());
-	std::string nrDMsPerBlock_s = isa::utils::toString< unsigned int >(nrDMsPerBlock);
-	std::string nrDMsPerThread_s = isa::utils::toString< unsigned int >(nrDMsPerThread);
 
 	// Begin kernel's template
   *code = "__kernel void folding(const unsigned int second, __global const " + dataType + " * const restrict samples, __global " + dataType + " * const restrict bins, __global const unsigned int * const restrict readCounters, __global unsigned int * const restrict writeCounters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
@@ -94,9 +92,9 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
 	std::string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + isa::utils::toString(nrBinsPerBlock * nrBinsPerThread) + ") + get_local_id(2) + <%BIN_OFFSET%>;\n";
 	std::string defsDMTemplate;
   if ( vector == 1 ) {
-    defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
+    defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + isa::utils::toString(nrDMsPerBlock * nrDMsPerThread) + ") + get_local_id(0) + <%DM_OFFSET%>;\n";
   } else {
-    defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + " * " + isa::utils::toString(vector) + ") + (get_local_id(0) * " + isa::utils::toString(vector) + ") + (<%DM_NUM%> * " + nrDMsPerBlock_s + " * " + isa::utils::toString(vector) + ");\n";
+    defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + isa::utils::toString(nrDMsPerBlock * nrDMsPerThread * vector) + ") + (get_local_id(0) * " + isa::utils::toString(vector) + ") + <%DM_OFFSET%>;\n";
   }
 	std::string defsPeriodBinTemplate = "const unsigned int samplesPerBinp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation.getPadding())) + ")];\n"
 		"const unsigned int offsetp<%PERIOD_NUM%>b<%BIN_NUM%> = nrSamplesPerBin[(period<%PERIOD_NUM%> * " + isa::utils::toString(observation.getNrBins() * isa::utils::pad(2, observation.getPadding())) + ") + (bin<%BIN_NUM%> * " + isa::utils::toString(isa::utils::pad(2, observation.getPadding())) + ") + 1];\n"
@@ -158,7 +156,7 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
     std::string * temp = 0;
 
     temp = isa::utils::replace(&defsBinTemplate, "<%BIN_NUM%>", bin_s);
-    if ( bin * nrBinsPerBlock == 0 ) {
+    if ( bin == 0 ) {
       std::string empty_s;
       temp = isa::utils::replace(temp, " + <%BIN_OFFSET%>", empty_s, true);
     } else {
@@ -169,9 +167,16 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
   }
   for ( unsigned int dm = 0; dm < nrDMsPerThread; dm++ ) {
     std::string dm_s = isa::utils::toString< unsigned int >(dm);
+    std::string offset_s = isa::utils::toString(dm * nrDMsPerBlock * vector);
     std::string * temp = 0;
 
     temp = isa::utils::replace(&defsDMTemplate, "<%DM_NUM%>", dm_s);
+    if ( dm == 0 ) {
+      std::string empty_s;
+      temp = isa::utils::replace(temp, " + <%DM_OFFSET%>", empty_s, true);
+    } else {
+      temp = isa::utils::replace(temp, "<%DM_OFFSET%>", offset_s, true);
+    }
     defsDM_s->append(*temp);
     delete temp;
   }
@@ -181,7 +186,7 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
     std::string * temp = 0;
 
     temp = isa::utils::replace(&defsPeriodTemplate, "<%PERIOD_NUM%>", period_s);
-    if ( period * nrPeriodsPerBlock == 0 ) {
+    if ( period == 0 ) {
       std::string empty_s;
       temp = isa::utils::replace(temp, " + <%PERIOD_OFFSET%>", empty_s, true);
     } else {
