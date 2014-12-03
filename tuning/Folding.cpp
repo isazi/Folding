@@ -39,6 +39,8 @@ int main(int argc, char * argv[]) {
 	unsigned int nrIterations = 0;
 	unsigned int clPlatformID = 0;
 	unsigned int clDeviceID = 0;
+  unsigned int threadUnit = 0;
+  unsigned int threadIncrement = 0;
 	unsigned int minThreads = 0;
 	unsigned int maxThreadsPerBlock = 0;
 	unsigned int maxItemsPerThread = 0;
@@ -54,6 +56,8 @@ int main(int argc, char * argv[]) {
 		clPlatformID = args.getSwitchArgument< unsigned int >("-opencl_platform");
 		clDeviceID = args.getSwitchArgument< unsigned int >("-opencl_device");
 		observation.setPadding(args.getSwitchArgument< unsigned int >("-padding"));
+    threadUnit = args.getSwitchArgument< unsigned int >("-thread_unit");
+    threadIncrement = args.getSwitchArgument< unsigned int >("-thread_inc");
 		minThreads = args.getSwitchArgument< unsigned int >("-min_threads");
 		maxThreadsPerBlock = args.getSwitchArgument< unsigned int >("-max_threads");
 		maxItemsPerThread = args.getSwitchArgument< unsigned int >("-max_items");
@@ -65,7 +69,7 @@ int main(int argc, char * argv[]) {
     observation.setPeriodRange(args.getSwitchArgument< unsigned int >("-periods"), args.getSwitchArgument< unsigned int >("-first_period"), args.getSwitchArgument< unsigned int >("-period_step"));
     observation.setNrBins(args.getSwitchArgument< unsigned int >("-bins"));
 	} catch ( isa::utils::EmptyCommandLine &err ) {
-		std::cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -padding ... -min_threads ... -max_threads ... -max_items ... -max_columns ... -max_rows ... -max_vector ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
+		std::cerr << argv[0] << " -iterations ... -opencl_platform ... -opencl_device ... -thread_unit ... -thread_inc ... -padding ... -min_threads ... -max_threads ... -max_items ... -max_columns ... -max_rows ... -max_vector ... -samples ... -dms ... -periods ... -bins ... -first_period ... -period_step ..." << std::endl;
 		return 1;
 	} catch ( std::exception &err ) {
 		std::cerr << err.what() << std::endl;
@@ -126,7 +130,7 @@ int main(int argc, char * argv[]) {
 
 	// Find the parameters
 	std::vector< unsigned int > DMsPerBlock;
-	for ( unsigned int DMs = minThreads; DMs <= maxColumns; DMs += minThreads ) {
+	for ( unsigned int DMs = minThreads; DMs <= maxColumns; DMs += threadIncrement ) {
 		if ( (observation.getNrPaddedDMs() % DMs) == 0 ) {
 			DMsPerBlock.push_back(DMs);
 		}
@@ -145,7 +149,7 @@ int main(int argc, char * argv[]) {
 	}
 
 	std::cout << std::fixed << std::endl;
-	std::cout << "# nrDMs nrSamples nrPeriods nrBins firstPeriod periodStep DMsPerBlock periodsPerBlock binsPerBlock DMsPerThread periodsPerThread binsPerThread vector GFLOP/s err time err" << std::endl << std::endl;
+	std::cout << "# nrDMs nrSamples nrPeriods nrBins firstPeriod periodStep DMsPerBlock periodsPerBlock binsPerBlock DMsPerThread periodsPerThread binsPerThread vector GFLOP/s time stdDeviation COV" << std::endl << std::endl;
 
   for ( std::vector< unsigned int >::iterator DMs = DMsPerBlock.begin(); DMs != DMsPerBlock.end(); ++DMs ) {
     for ( std::vector< unsigned int >::iterator periods = periodsPerBlock.begin(); periods != periodsPerBlock.end(); ++periods ) {
@@ -153,6 +157,8 @@ int main(int argc, char * argv[]) {
         if ( (*DMs * *periods * *bins) > maxThreadsPerBlock ) {
           break;
         } else if ( *periods * *bins > maxRows ) {
+          break;
+        } else if ( (*DMs * *periods * *bins) % threadUnit != 0 ) {
           break;
         }
         for ( unsigned int DMsPerThread = 1; DMsPerThread <= maxItemsPerThread; DMsPerThread++ ) {
@@ -178,7 +184,6 @@ int main(int argc, char * argv[]) {
                 // Generate kernel
                 double flops = isa::utils::giga(static_cast< long long unsigned int >(observation.getNrDMs()) * observation.getNrPeriods() * observation.getNrSamplesPerSecond());
                 isa::utils::Timer timer;
-                isa::utils::Stats< double > stats;
                 cl::Event event;
                 cl::Kernel * kernel;
                 std::string * code = PulsarSearch::getFoldingOpenCL(*DMs, *periods, *bins, DMsPerThread, periodsPerThread, binsPerThread, vector, typeName, observation);
@@ -189,6 +194,7 @@ int main(int argc, char * argv[]) {
                   std::cerr << err.what() << std::endl;
                   continue;
                 }
+                delete code;
 
                 cl::NDRange global(observation.getNrPaddedDMs() / vector / DMsPerThread, observation.getNrPeriods() / periodsPerThread, observation.getNrBins() / binsPerThread);
                 cl::NDRange local(*DMs, *periods, *bins);
@@ -215,14 +221,18 @@ int main(int argc, char * argv[]) {
                     clQueues->at(clDeviceID)[0].enqueueNDRangeKernel(*kernel, cl::NullRange, global, local, 0, &event);
                     event.wait();
                     timer.stop();
-                    stats.addElement(flops / timer.getLastRunTime());
                   }
                 } catch ( cl::Error &err ) {
                   std::cerr << "OpenCL error kernel execution: " << isa::utils::toString(err.err()) << "." << std::endl;
                   continue;
                 }
 
-                std::cout << observation.getNrDMs() << " " << observation.getNrSamplesPerSecond() << " " << observation.getNrPeriods() << " " << observation.getNrBins() << " " << observation.getFirstPeriod() << " " << observation.getPeriodStep() << " " << *DMs << " " << *periods << " " << *bins << " " << DMsPerThread << " " << periodsPerThread << " " << binsPerThread << " " << vector << " " << std::setprecision(3) << stats.getMean() << " " << stats.getStandardDeviation() << " " << std::setprecision(6) << timer.getAverageTime() << " " << timer.getStandardDeviation() << std::endl;
+                std::cout << observation.getNrDMs() << " " << observation.getNrSamplesPerSecond() << " " << observation.getNrPeriods() << " " << observation.getNrBins() << " " << observation.getFirstPeriod() << " " << observation.getPeriodStep() << " ";
+                std::cout << *DMs << " " << *periods << " " << *bins << " " << DMsPerThread << " " << periodsPerThread << " " << binsPerThread << " " << vector << " ";
+                std::cout << std::setprecision(3);
+                std::cout << flops / timer.getAverageTime() << " ";
+                std::cout << std::setprecision(6);
+                std::cout << timer.getAverageTime() << " " << timer.getStandardDeviation() << " " << timer.getCoefficientOfVariation() << std::endl;
               }
             }
           }
