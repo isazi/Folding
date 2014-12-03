@@ -95,7 +95,7 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
     "}\n";
 	std::string defsPeriodTemplate = "const unsigned int period<%PERIOD_NUM%> = (get_group_id(1) * " + isa::utils::toString(nrPeriodsPerBlock * nrPeriodsPerThread) + ") + get_local_id(1) + <%PERIOD_OFFSET%>;\n"
     "const unsigned int period<%PERIOD_NUM%>Value = " + firstPeriod_s + " + (period<%PERIOD_NUM%> * " + periodStep_s + ");\n";
-	std::string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + nrBinsPerBlock_s + " * " + nrBinsPerThread_s + ") + get_local_id(2) + (<%BIN_NUM%> * " + nrBinsPerBlock_s + ");\n";
+	std::string defsBinTemplate = "const unsigned int bin<%BIN_NUM%> = (get_group_id(2) * " + isa::utils::toString(nrBinsPerBlock * nrBinsPerThread) + ") + get_local_id(2) + <%BIN_OFFSET%>;\n";
 	std::string defsDMTemplate;
   if ( vector == 1 ) {
     defsDMTemplate = "const unsigned int DM<%DM_NUM%> = (get_group_id(0) * " + nrDMsPerBlock_s + " * " + nrDMsPerThread_s + ") + get_local_id(0) + (<%DM_NUM%> * " + nrDMsPerBlock_s + ");\n";
@@ -158,9 +158,16 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
 
   for ( unsigned int bin = 0; bin < nrBinsPerThread; bin++ ) {
     std::string bin_s = isa::utils::toString< unsigned int >(bin);
+    std::string offset_s = isa::utils::toString(bin * nrBinsPerBlock);
     std::string * temp = 0;
 
     temp = isa::utils::replace(&defsBinTemplate, "<%BIN_NUM%>", bin_s);
+    if ( bin * nrBinsPerBlock == 0 ) {
+      std::string empty_s;
+      temp = isa::utils::replace(temp, " + <%BIN_OFFSET%>", empty_s, true);
+    } else {
+      temp = isa::utils::replace(temp, "<%BIN_OFFSET%>", offset_s, true);
+    }
     defsBin_s->append(*temp);
     delete temp;
   }
