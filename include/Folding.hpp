@@ -69,7 +69,6 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
   std::string * code = new std::string();
 	std::string nrSamplesPerSecond_s = isa::utils::toString< unsigned int >(observation.getNrSamplesPerSecond());
 	std::string nrPaddedDMs_s  = isa::utils::toString< unsigned int >(observation.getNrPaddedDMs());
-	std::string nrPeriods_s = isa::utils::toString< unsigned int >(observation.getNrPeriods());
 	std::string firstPeriod_s = isa::utils::toString< unsigned int >(observation.getFirstPeriod());
 	std::string periodStep_s = isa::utils::toString< unsigned int >(observation.getPeriodStep());
 	std::string nrPaddedBins_s = isa::utils::toString< unsigned int >(observation.getNrPaddedBins());
@@ -133,7 +132,7 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
     "<%STORE_DM%>"
     "}\n"
     "writeCounters[(period<%PERIOD_NUM%> * " + nrPaddedBins_s + ") + bin<%BIN_NUM%>] = pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>;\n";
-  std::string storeDMTemplate ="outputItem = (bin<%BIN_NUM%> * " + nrPeriods_s + " * " + nrPaddedDMs_s + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
+  std::string storeDMTemplate ="outputItem = (bin<%BIN_NUM%> * " + isa::utils::toString(observation.getNrPeriods() * observation.getNrPaddedDMs()) + ") + (period<%PERIOD_NUM%> * " + nrPaddedDMs_s + ") + DM<%DM_NUM%>;\n"
     "pValue = bins[outputItem];\n";
   if ( vector == 1 ) {
     storeDMTemplate += "bins[outputItem] = ((pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> * pValue) + (foldedSamplep<%PERIOD_NUM%>b<%BIN_NUM%>d<%DM_NUM%>)) / (pCounterp<%PERIOD_NUM%>b<%BIN_NUM%> + foldedCounterp<%PERIOD_NUM%>b<%BIN_NUM%>);\n";
