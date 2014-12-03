@@ -222,7 +222,7 @@ int main(int argc, char * argv[]) {
                   continue;
                 }
 
-                std::cout << observation.getNrDMs() << " " << observation.getNrSamplesPerSecond() << " " << observation.getNrPeriods() << " " << observation.getNrBins() << " " << observation.getFirstPeriod() << " " << observation.getPeriodStep() << " " << *DMs << " " << *periods << " " << *bins << " " << DMsPerThread << " " << periodsPerThread << " " << binsPerThread << " " << vector << " " << std::setprecision(3) << stats.getAverage() << " " << stats.getStandardDeviation() << " " << std::setprecision(6) << timer.getAverageTime() << " " << timer.getStandardDeviation() << std::endl;
+                std::cout << observation.getNrDMs() << " " << observation.getNrSamplesPerSecond() << " " << observation.getNrPeriods() << " " << observation.getNrBins() << " " << observation.getFirstPeriod() << " " << observation.getPeriodStep() << " " << *DMs << " " << *periods << " " << *bins << " " << DMsPerThread << " " << periodsPerThread << " " << binsPerThread << " " << vector << " " << std::setprecision(3) << stats.getMean() << " " << stats.getStandardDeviation() << " " << std::setprecision(6) << timer.getAverageTime() << " " << timer.getStandardDeviation() << std::endl;
               }
             }
           }
