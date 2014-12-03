@@ -224,6 +224,7 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
       temp = isa::utils::replace(&computeTemplate, "<%PERIOD_NUM%>", period_s);
       temp = isa::utils::replace(temp, "<%BIN_NUM%>", bin_s, true);
       temp = isa::utils::replace(temp, "<%COMPUTE_DM%>", *computeDM_s, true);
+      temp = isa::utils::replace(temp, "<%STORE_DM%>", *storeDM_s, true);
       compute_s->append(*temp);
       delete temp;
     }
