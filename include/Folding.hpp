@@ -75,10 +75,6 @@ std::string * getFoldingOpenCL(const unsigned int nrDMsPerBlock, const unsigned 
 	std::string nrPaddedBins_s = isa::utils::toString< unsigned int >(observation.getNrPaddedBins());
 	std::string nrDMsPerBlock_s = isa::utils::toString< unsigned int >(nrDMsPerBlock);
 	std::string nrDMsPerThread_s = isa::utils::toString< unsigned int >(nrDMsPerThread);
-	std::string nrPeriodsPerBlock_s = isa::utils::toString< unsigned int >(nrPeriodsPerBlock);
-	std::string nrPeriodsPerThread_s = isa::utils::toString< unsigned int >(nrPeriodsPerThread);
-	std::string nrBinsPerBlock_s = isa::utils::toString< unsigned int >(nrBinsPerBlock);
-	std::string nrBinsPerThread_s = isa::utils::toString< unsigned int >(nrBinsPerThread);
 
 	// Begin kernel's template
   *code = "__kernel void folding(const unsigned int second, __global const " + dataType + " * const restrict samples, __global " + dataType + " * const restrict bins, __global const unsigned int * const restrict readCounters, __global unsigned int * const restrict writeCounters, __global const unsigned int * const restrict nrSamplesPerBin) {\n"
