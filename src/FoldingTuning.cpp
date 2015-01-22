@@ -34,7 +34,7 @@
 typedef float dataType;
 std::string typeName("float");
 
-void initializeDeviceMemory(cl::Context & clContext, cl::CommandQueue * clQueue, std::vector< unsigned int > * samplesPerBin, cl::Buffer * samplesPerBin_d, std::vector< dataType > * dedispersedData, cl::Buffer * dedispersedData_d, std::vector< dataType > * foldedData, cl::Buffer * foldedData_d, std::vector< unsigned int > * readCounters, cl::Buffer * readCounters_d, std::vector< unsigned int > * writeCounters, cl::Buffer * writeCounters_d);
+void initializeDeviceMemory(cl::Context & clContext, cl::CommandQueue * clQueue, std::vector< unsigned int > * samplesPerBin, cl::Buffer * samplesPerBin_d, std::vector< dataType > & dedispersedData, cl::Buffer * dedispersedData_d, std::vector< dataType > & foldedData, cl::Buffer * foldedData_d, std::vector< unsigned int > & readCounters, cl::Buffer * readCounters_d, std::vector< unsigned int > & writeCounters, cl::Buffer * writeCounters_d);
 
 int main(int argc, char * argv[]) {
   bool reInit = true;
@@ -80,7 +80,12 @@ int main(int argc, char * argv[]) {
 		return 1;
 	}
 
-  // Allocate host memory
+  // Allocate memory
+  cl::Buffer samplesPerBin_d;
+  cl::Buffer dedispersedData_d;
+  cl::Buffer foldedData_d;
+  cl::Buffer readCounters_d;
+  cl::Buffer writeCounters_d;
   std::vector< unsigned int > * samplesPerBin = PulsarSearch::getSamplesPerBin(observation);
   std::vector< dataType > dedispersedData = std::vector< dataType >(observation.getNrSamplesPerSecond() * observation.getNrPaddedDMs());
   std::vector< dataType > foldedData = std::vector< dataType >(observation.getNrBins() * observation.getNrPeriods() * observation.getNrPaddedDMs());
@@ -104,13 +109,6 @@ int main(int argc, char * argv[]) {
 	std::vector< std::vector< cl::CommandQueue > > * clQueues = new std::vector< std::vector < cl::CommandQueue > >();
 
   isa::OpenCL::initializeOpenCL(clPlatformID, 1, clPlatforms, &clContext, clDevices, clQueues);
-
-	// Allocate device memory
-  cl::Buffer samplesPerBin_d;
-  cl::Buffer dedispersedData_d;
-  cl::Buffer foldedData_d;
-  cl::Buffer readCounters_d;
-  cl::Buffer writeCounters_d;
 
 	// Find the parameters
 	std::vector< unsigned int > DMsPerBlock;
@@ -258,18 +256,18 @@ int main(int argc, char * argv[]) {
 	return 0;
 }
 
-void initializeDeviceMemory(cl::Context & clContext, cl::CommandQueue * clQueue, std::vector< unsigned int > * samplesPerBin, cl::Buffer * samplesPerBin_d, std::vector< dataType > * dedispersedData, cl::Buffer * dedispersedData_d, std::vector< dataType > * foldedData, cl::Buffer * foldedData_d, std::vector< unsigned int > * readCounters, cl::Buffer * readCounters_d, std::vector< unsigned int > * writeCounters, cl::Buffer * writeCounters_d) {
+void initializeDeviceMemory(cl::Context & clContext, cl::CommandQueue * clQueue, std::vector< unsigned int > * samplesPerBin, cl::Buffer * samplesPerBin_d, std::vector< dataType > & dedispersedData, cl::Buffer * dedispersedData_d, std::vector< dataType > & foldedData, cl::Buffer * foldedData_d, std::vector< unsigned int > & readCounters, cl::Buffer * readCounters_d, std::vector< unsigned int > & writeCounters, cl::Buffer * writeCounters_d) {
   try {
     *samplesPerBin_d = cl::Buffer(clContext, CL_MEM_READ_ONLY, samplesPerBin->size() * sizeof(unsigned int), 0, 0);
-    *dedispersedData_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, dedispersedData->size() * sizeof(dataType), 0, 0);
-    *foldedData_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, foldedData->size() * sizeof(dataType), 0, 0);
-    *readCounters_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, readCounters->size() * sizeof(unsigned int), 0, 0);
-    *writeCounters_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, writeCounters->size() * sizeof(unsigned int), 0, 0);
+    *dedispersedData_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, dedispersedData.size() * sizeof(dataType), 0, 0);
+    *foldedData_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, foldedData.size() * sizeof(dataType), 0, 0);
+    *readCounters_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, readCounters.size() * sizeof(unsigned int), 0, 0);
+    *writeCounters_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, writeCounters.size() * sizeof(unsigned int), 0, 0);
     clQueue->enqueueWriteBuffer(samplesPerBin_d, CL_FALSE, 0, samplesPerBin->size() * sizeof(unsigned int), reinterpret_cast< void * >(samplesPerBin->data()));
-    clQueue->enqueueWriteBuffer(dedispersedData_d, CL_FALSE, 0, dedispersedData->size() * sizeof(dataType), reinterpret_cast< void * >(dedispersedData->data()));
-    clQueue->enqueueWriteBuffer(foldedData_d, CL_FALSE, 0, foldedData->size() * sizeof(dataType), reinterpret_cast< void * >(foldedData->data()));
-    clQueue->enqueueWriteBuffer(readCounters_d, CL_FALSE, 0, readCounters->size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters->data()));
-    clQueue->enqueueWriteBuffer(writeCounters_d, CL_FALSE, 0, writeCounters->size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters->data()));
+    clQueue->enqueueWriteBuffer(dedispersedData_d, CL_FALSE, 0, dedispersedData.size() * sizeof(dataType), reinterpret_cast< void * >(dedispersedData.data()));
+    clQueue->enqueueWriteBuffer(foldedData_d, CL_FALSE, 0, foldedData.size() * sizeof(dataType), reinterpret_cast< void * >(foldedData.data()));
+    clQueue->enqueueWriteBuffer(readCounters_d, CL_FALSE, 0, readCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters.data()));
+    clQueue->enqueueWriteBuffer(writeCounters_d, CL_FALSE, 0, writeCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters.data()));
     clQueue->finish();
   } catch ( cl::Error & err ) {
     std::cerr << "OpenCL error: " << isa::utils::toString(err.err()) << "." << std::endl;
