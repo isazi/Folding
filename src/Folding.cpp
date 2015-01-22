@@ -21,9 +21,7 @@ FoldingConf::FoldingConf() {}
 FoldingConf::~FoldingConf() {}
 
 std::string FoldingConf::print() const {
-  std::string separator = isa::utils::toString(" ");
-
-  return std::string(isa::utils::toString(nrDMsPerBlock) + separator + isa::utils::toString(nrPeriodsPerBlock) + separator + isa::utils::toString(nrBinsPerBlock) + separator + isa::utils::toString(nrDMsPerThread) + separator + isa::utils::toString(nrPeriodsPerThread) + separator + isa::utils::toString(nrBinsPerThread) + separator + isa::utils::toString(vector));
+  return std::string(isa::utils::toString(nrDMsPerBlock) + " " + isa::utils::toString(nrPeriodsPerBlock) + " " + isa::utils::toString(nrBinsPerBlock) + " " + isa::utils::toString(nrDMsPerThread) + " " + isa::utils::toString(nrPeriodsPerThread) + " " + isa::utils::toString(nrBinsPerThread) + " " + isa::utils::toString(vector));
 }
 
 std::string * getFoldingOpenCL(const FoldingConf & conf, const std::string & dataType, const AstroData::Observation & observation) {
