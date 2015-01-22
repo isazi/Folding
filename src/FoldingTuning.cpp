@@ -263,11 +263,11 @@ void initializeDeviceMemory(cl::Context & clContext, cl::CommandQueue * clQueue,
     *foldedData_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, foldedData.size() * sizeof(dataType), 0, 0);
     *readCounters_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, readCounters.size() * sizeof(unsigned int), 0, 0);
     *writeCounters_d = cl::Buffer(clContext, CL_MEM_READ_WRITE, writeCounters.size() * sizeof(unsigned int), 0, 0);
-    clQueue->enqueueWriteBuffer(samplesPerBin_d, CL_FALSE, 0, samplesPerBin->size() * sizeof(unsigned int), reinterpret_cast< void * >(samplesPerBin->data()));
-    clQueue->enqueueWriteBuffer(dedispersedData_d, CL_FALSE, 0, dedispersedData.size() * sizeof(dataType), reinterpret_cast< void * >(dedispersedData.data()));
-    clQueue->enqueueWriteBuffer(foldedData_d, CL_FALSE, 0, foldedData.size() * sizeof(dataType), reinterpret_cast< void * >(foldedData.data()));
-    clQueue->enqueueWriteBuffer(readCounters_d, CL_FALSE, 0, readCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters.data()));
-    clQueue->enqueueWriteBuffer(writeCounters_d, CL_FALSE, 0, writeCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters.data()));
+    clQueue->enqueueWriteBuffer(*samplesPerBin_d, CL_FALSE, 0, samplesPerBin->size() * sizeof(unsigned int), reinterpret_cast< void * >(samplesPerBin->data()));
+    clQueue->enqueueWriteBuffer(*dedispersedData_d, CL_FALSE, 0, dedispersedData.size() * sizeof(dataType), reinterpret_cast< void * >(dedispersedData.data()));
+    clQueue->enqueueWriteBuffer(*foldedData_d, CL_FALSE, 0, foldedData.size() * sizeof(dataType), reinterpret_cast< void * >(foldedData.data()));
+    clQueue->enqueueWriteBuffer(*readCounters_d, CL_FALSE, 0, readCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(readCounters.data()));
+    clQueue->enqueueWriteBuffer(*writeCounters_d, CL_FALSE, 0, writeCounters.size() * sizeof(unsigned int), reinterpret_cast< void * >(writeCounters.data()));
     clQueue->finish();
   } catch ( cl::Error & err ) {
     std::cerr << "OpenCL error: " << isa::utils::toString(err.err()) << "." << std::endl;
