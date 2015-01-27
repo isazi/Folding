@@ -27,23 +27,23 @@ DEPS := $(ASTRODATA)/bin/Observation.o $(UTILS)/bin/ArgumentList.o $(UTILS)/bin/
 CL_DEPS := $(DEPS) $(OPENCL)/bin/Exceptions.o $(OPENCL)/bin/InitializeOpenCL.o $(OPENCL)/bin/Kernel.o 
 
 
-all: Bins.o Folding.o FoldingTest FoldingTuning printCode
+all: bin/Bins.o bin/Folding.o bin/FoldingTest bin/FoldingTuning bin/printCode
 
-Bins.o: $(ASTRODATA)/bin/Observation.o $(UTILS)/bin/utils.o include/Bins.hpp src/Bins.cpp
+bin/Bins.o: $(ASTRODATA)/bin/Observation.o $(UTILS)/bin/utils.o include/Bins.hpp src/Bins.cpp
 	$(CC) -o bin/Bins.o -c src/Bins.cpp $(INCLUDES) $(CFLAGS)
 
-Folding.o: $(UTILS)/bin/utils.o bin/Bins.o include/Folding.hpp src/Folding.cpp
+bin/Folding.o: $(UTILS)/bin/utils.o bin/Bins.o include/Folding.hpp src/Folding.cpp
 	$(CC) -o bin/Folding.o -c src/Folding.cpp $(CL_INCLUDES) $(CFLAGS)
 
-FoldingTest: $(CL_DEPS) src/FoldingTest.cpp
+bin/FoldingTest: $(CL_DEPS) src/FoldingTest.cpp
 	$(CC) -o bin/FoldingTest src/FoldingTest.cpp $(CL_DEPS) $(CL_INCLUDES) $(CL_LIBS) $(CL_LDFLAGS) $(CFLAGS)
 
-FoldingTuning: $(CL_DEPS) src/FoldingTuning.cpp
+bin/FoldingTuning: $(CL_DEPS) src/FoldingTuning.cpp
 	$(CC) -o bin/FoldingTuning src/FoldingTuning.cpp $(CL_DEPS) $(CL_INCLUDES) $(CL_LIBS) $(CL_LDFLAGS) $(CFLAGS)
 
-printCode: $(DEPS) src/printCode.cpp
+bin/printCode: $(DEPS) src/printCode.cpp
 	$(CC) -o bin/printCode src/printCode.cpp $(DEPS) $(INCLUDES) $(LDFLAGS) $(CFLAGS)
 
 clean:
-	rm bin/*
+	-@rm bin/*
 
