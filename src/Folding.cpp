@@ -16,6 +16,69 @@
 
 namespace PulsarSearch {
 
+void readTunedFoldingConf(tunedFoldingConf & tunedFolding, const std::string & foldingFilename) {
+	std::string temp;
+	std::ifstream foldingFile(foldingFilename);
+
+	while ( ! foldingFile.eof() ) {
+		unsigned int splitPoint = 0;
+
+		std::getline(foldingFile, temp);
+		if ( ! std::isalpha(temp[0]) ) {
+			continue;
+		}
+		std::string deviceName;
+		unsigned int nrDMs = 0;
+		unsigned int nrPeriods = 0;
+    PulsarSearch::FoldingConf parameters;
+
+		splitPoint = temp.find(" ");
+		deviceName = temp.substr(0, splitPoint);
+		temp = temp.substr(splitPoint + 1);
+		splitPoint = temp.find(" ");
+		nrDMs = isa::utils::castToType< std::string, unsigned int >(temp.substr(0, splitPoint));
+		temp = temp.substr(splitPoint + 1);
+		splitPoint = temp.find(" ");
+		nrPeriods = isa::utils::castToType< std::string, unsigned int >(temp.substr(0, splitPoint));
+		temp = temp.substr(splitPoint + 1);
+		splitPoint = temp.find(" ");
+		parameters.setNrDMsPerBlock(isa::utils::castToType< std::string, unsigned int >(temp.substr(0, splitPoint)));
+		temp = temp.substr(splitPoint + 1);
+		splitPoint = temp.find(" ");
+		parameters.setNrPeriodsPerBlock(isa::utils::castToType< std::string, unsigned int >(temp.substr(0, splitPoint)));
+		temp = temp.substr(splitPoint + 1);
+		splitPoint = temp.find(" ");
+		parameters.setNrBinsPerBlock(isa::utils::castToType< std::string, unsigned int >(temp.substr(0, splitPoint)));
+		temp = temp.substr(splitPoint + 1);
+		splitPoint = temp.find(" ");
+		parameters.setNrDMsPerThread(isa::utils::castToType< std::string, unsigned int >(temp.substr(0, splitPoint)));
+		temp = temp.substr(splitPoint + 1);
+		splitPoint = temp.find(" ");
+		parameters.setNrPeriodsPerThread(isa::utils::castToType< std::string, unsigned int >(temp.substr(0, splitPoint)));
+		temp = temp.substr(splitPoint + 1);
+		splitPoint = temp.find(" ");
+		parameters.setNrBinsPerThread(isa::utils::castToType< std::string, unsigned int >(temp.substr(0, splitPoint)));
+		temp = temp.substr(splitPoint + 1);
+		parameters.setVector(isa::utils::castToType< std::string, unsigned int >(temp));
+
+		if ( tunedFolding.count(deviceName) == 0 ) {
+      std::map< unsigned int, std::map< unsigned int, PulsarSearch::FoldingConf > > externalContainer;
+      std::map< unsigned int, PulsarSearch::FoldingConf > internalContainer;
+
+			internalContainer.insert(std::make_pair(nrPeriods, parameters));
+			externalContainer.insert(std::make_pair(nrDMs, internalContainer));
+			tunedFolding.insert(std::make_pair(deviceName, externalContainer));
+		} else if ( tunedFolding[deviceName].count(nrDMs) == 0 ) {
+      std::map< unsigned int, PulsarSearch::FoldingConf > internalContainer;
+
+			internalContainer.insert(std::make_pair(nrPeriods, parameters));
+			tunedFolding[deviceName].insert(std::make_pair(nrDMs, internalContainer));
+		} else {
+			tunedFolding[deviceName][nrDMs].insert(std::make_pair(nrPeriods, parameters));
+		}
+	}
+}
+
 FoldingConf::FoldingConf() {}
 
 FoldingConf::~FoldingConf() {}

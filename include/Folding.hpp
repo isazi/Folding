@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <fstream>
 
 #include <utils.hpp>
 #include <Observation.hpp>
@@ -59,10 +60,14 @@ private:
   unsigned int vector;
 };
 
+typename std::map< std::string, std::map< unsigned int, std::map< unsigned int, PulsarSearch::FoldingConf > > > tunedFoldingConf;
+
 // Sequential folding
 template< typename T > void folding(const unsigned int second, const AstroData::Observation & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters);
 // OpenCL folding algorithm
 std::string * getFoldingOpenCL(const FoldingConf & conf, const std::string & dataType, const AstroData::Observation & observation);
+// Read configuration files
+void readTunedFoldingConf(tunedFoldingConf & tunedFolding, const std::string & foldingFilename);
 
 
 // Implementations
