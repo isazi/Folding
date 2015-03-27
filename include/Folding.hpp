@@ -60,7 +60,7 @@ private:
   unsigned int vector;
 };
 
-typename std::map< std::string, std::map< unsigned int, std::map< unsigned int, PulsarSearch::FoldingConf > > > tunedFoldingConf;
+typedef std::map< std::string, std::map< unsigned int, std::map< unsigned int, PulsarSearch::FoldingConf > > > tunedFoldingConf;
 
 // Sequential folding
 template< typename T > void folding(const unsigned int second, const AstroData::Observation & observation, const std::vector< T > & samples, std::vector< T > & bins, std::vector< unsigned int > & counters);
